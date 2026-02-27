@@ -151,24 +151,45 @@ const AppContent: FC = () => {
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
+        // เพิ่ม Headers เป็น text/plain เพื่อป้องกันปัญหา CORS กับ GAS
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
         body: JSON.stringify({ 
           action: 'submitOrder', 
           payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod } 
         }),
       });
-      const data = await res.json();
+      
+      // ดึงค่าเป็น Text ก่อน เผื่อ GAS พ่น HTML Error ออกมาจะได้ไม่พัง
+      const responseText = await res.text();
+      const data = JSON.parse(responseText);
+
       if (data.status === 'success') {
+        
+        // 🟢 แยกดักจับ Error ของ liff.sendMessages ออกมาต่างหาก
         if (liff.isInClient()) {
+          try {
             const summary = `🛒 สั่งซื้อสำเร็จ!\nรหัสออเดอร์: ${data.orderId}\nยอดรวม: ${cartTotal}.-`;
             await liff.sendMessages([{ type: 'text', text: summary }]);
+          } catch (msgError) {
+            console.warn('ไม่สามารถส่งข้อความเข้าแชทได้ (อาจไม่ได้เปิด Scope chat_message.write):', msgError);
+            // ถึงส่งข้อความไม่ได้ ก็ไม่ต้องให้ระบบแอปพัง
+          }
         }
+
         alert('ส่งคำสั่งซื้อเรียบร้อย!');
         setCart([]);
         setShowCart(false);
         navigate('/history');
+      } else {
+        throw new Error(data.error || 'สถานะไม่สำเร็จ');
       }
-    } catch (error) {
-        alert('ไม่สามารถส่งคำสั่งซื้อได้');
+
+    } catch (error: any) {
+      console.error("Order Submit Error:", error);
+      // แจ้งเตือนสาเหตุที่แท้จริงออกมา จะได้รู้ว่าพังที่อะไร
+      alert(`ไม่สามารถส่งคำสั่งซื้อได้: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
