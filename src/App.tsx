@@ -12,7 +12,7 @@ import History from './components/History';
 import CartSummary from './components/CartSummary';
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiM_Fi6St5RPAjFBbM8QvCuFYAE_Ah_h5uDt4xznIODfAq-3eHKcXk_4eLaGwME53C/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
 
 const AppContent: FC = () => {
   const navigate = useNavigate();
