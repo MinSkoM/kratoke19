@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // เพิ่ม useRef
 import type { FC } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import liff from '@line/liff';
@@ -14,18 +14,18 @@ import CartSummary from './components/CartSummary';
 const LIFF_ID = process.env.VITE_LIFF_ID || '2009263888-F1O3wTGT'; 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiM_Fi6St5RPAjFBbM8QvCuFYAE_Ah_h5uDt4xznIODfAq-3eHKcXk_4eLaGwME53C/exec'; 
 
-// --- Component หลักที่จะจัดการ Logic ทั้งหมด --
 const AppContent: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [liffObject, setLiffObject] = useState<Liff | null>(null);
+  // ใช้ ref เพื่อป้องกันการ init ซ้ำซ้อน
+  const isInitialized = useRef(false);
+  
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
-  
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // เริ่มต้นเป็น true เลย
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -33,8 +33,11 @@ const AppContent: FC = () => {
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
   useEffect(() => {
+    // ถ้าเคยรันไปแล้วให้ข้ามเลย (ป้องกัน StrictMode รัน 2 รอบ)
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     const initializeApp = async () => {
-      setIsLoading(true);
       try {
         let uid = 'U_MOCK_12345';
         let dName = 'Mock User';
@@ -42,17 +45,21 @@ const AppContent: FC = () => {
 
         if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID') {
           await liff.init({ liffId: LIFF_ID });
-          setLiffObject(liff);
-          if (liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            uid = profile.userId;
-            dName = profile.displayName;
-            pic = profile.pictureUrl || '';
+          
+          if (!liff.isLoggedIn()) {
+            liff.login(); // ถ้าไม่ได้ล็อกอิน ให้ส่งไปหน้าล็อกอิน
+            return; 
           }
+
+          const profile = await liff.getProfile();
+          uid = profile.userId;
+          dName = profile.displayName;
+          pic = profile.pictureUrl || '';
         }
 
         setUserProfile({ userId: uid, displayName: dName, pictureUrl: pic });
 
+        // ดึงข้อมูลเบื้องต้น
         const [memberRes, prodRes] = await Promise.all([
           fetch(`${GAS_URL}?action=checkMember&lineId=${uid}`),
           fetch(`${GAS_URL}?action=getProducts`)
@@ -76,30 +83,28 @@ const AppContent: FC = () => {
         setIsLoading(false);
       }
     };
-    initializeApp();
-  }, []);
 
-  // โหลดประวัติเมื่ออยู่ที่หน้า /history
+    initializeApp();
+  }, []); // รันครั้งเดียวเมื่อเมาท์
+
+  // แก้ไขส่วนดึงประวัติ: ให้ทำงานเมื่อเปิดหน้า History เท่านั้น
   useEffect(() => {
     if (location.pathname === '/history' && userProfile?.userId) {
+      const loadHistory = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`${GAS_URL}?action=getHistory&lineId=${userProfile.userId}`);
+          const data = await res.json();
+          if (data.status === 'success') setOrders(data.data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
       loadHistory();
     }
-  }, [location.pathname, userProfile]);
-
-  const loadHistory = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${GAS_URL}?action=getHistory&lineId=${userProfile?.userId}`);
-      const data = await res.json();
-      if (data.status === 'success') {
-        setOrders(data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [location.pathname, userProfile?.userId]);
 
   const handleRegister = async (name: string, phone: string, address: string) => {
     setIsLoading(true);
@@ -110,13 +115,10 @@ const AppContent: FC = () => {
         body: JSON.stringify({ action: 'register', payload }),
       });
       const data = await res.json();
-      
       if (data.status === 'success') {
         setIsRegistered(true);
         setMemberInfo({ name, phone, address });
         alert('บันทึกข้อมูลเรียบร้อย');
-        
-        // หลังจากลงทะเบียนเสร็จ ให้เด้งกลับไปหน้าแรก
         navigate('/menu');
       }
     } catch (err) {
@@ -127,15 +129,11 @@ const AppContent: FC = () => {
   };
 
   const addToCart = (product: Product, quantity: number = 1) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
-        );
-      } else {
-        return [...prevCart, { ...product, quantity }];
-      }
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      return existing 
+        ? prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
+        : [...prev, { ...product, quantity }];
     });
   };
 
@@ -155,25 +153,18 @@ const AppContent: FC = () => {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
-      const orderDetails = {
-        lineId: userProfile?.userId,
-        cart,
-        totalQuantity,
-        totalPrice: cartTotal,
-        shippingMethod: deliveryMethod,
-      };
-
       const res = await fetch(GAS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'submitOrder', payload: orderDetails }),
+        body: JSON.stringify({ 
+          action: 'submitOrder', 
+          payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod } 
+        }),
       });
-      
       const data = await res.json();
-
       if (data.status === 'success') {
-        if (liffObject && liffObject.isInClient()) {
+        if (liff.isInClient()) {
             const summary = `🛒 สั่งซื้อสำเร็จ!\nรหัสออเดอร์: ${data.orderId}\nยอดรวม: ${cartTotal}.-`;
-            await liffObject.sendMessages([{ type: 'text', text: summary }]);
+            await liff.sendMessages([{ type: 'text', text: summary }]);
         }
         alert('ส่งคำสั่งซื้อเรียบร้อย!');
         setCart([]);
@@ -187,7 +178,6 @@ const AppContent: FC = () => {
     }
   };
 
-  // ฟังก์ชันช่วยเช็คหน้าปัจจุบันเพื่อเปลี่ยนสีเมนู
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
   return (
@@ -195,32 +185,29 @@ const AppContent: FC = () => {
       {isLoading && (
         <div className="fixed inset-0 bg-white/80 z-[60] flex flex-col items-center justify-center backdrop-blur-sm">
            <Loader2 className="animate-spin text-blue-600 mb-2" size={48} />
-           <p className="text-gray-800 font-bold">กำลังดำเนินการ...</p>
+           <p className="text-gray-800 font-bold">กำลังโหลดข้อมูล...</p>
         </div>
       )}
 
-      {/* Header */}
       <header className="bg-white shadow-sm p-4 sticky top-0 z-40 border-b">
         <div className="container mx-auto flex justify-between items-center max-w-md">
           <div className="flex items-center gap-3">
-            {userProfile?.pictureUrl ? 
-              <img src={userProfile.pictureUrl} alt="profile" className="w-10 h-10 rounded-full border-2 border-blue-100" /> :
+            {userProfile?.pictureUrl ? (
+              <img src={userProfile.pictureUrl} className="w-10 h-10 rounded-full border-2 border-blue-100" />
+            ) : (
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><User size={24}/></div>
-            }
+            )}
             <div>
-              <h1 className="text-sm font-bold truncate w-32">{userProfile?.displayName || 'Guest User'}</h1>
+              <h1 className="text-sm font-bold truncate w-32">{userProfile?.displayName || 'Loading...'}</h1>
               <p className={`text-[10px] font-medium ${isRegistered ? 'text-green-600' : 'text-orange-500'}`}>
                 {isRegistered ? '● สมาชิกยืนยันแล้ว' : '● ยังไม่ได้ลงทะเบียน'}
               </p>
             </div>
           </div>
-          <button 
-            onClick={() => setShowCart(true)} 
-            className="relative p-2.5 bg-gray-100 rounded-full text-gray-700 active:bg-gray-200 transition-colors"
-          >
+          <button onClick={() => setShowCart(true)} className="relative p-2.5 bg-gray-100 rounded-full">
             <ShoppingCart size={22} />
             {totalQuantity > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white">
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
                 {totalQuantity}
               </span>
             )}
@@ -228,7 +215,6 @@ const AppContent: FC = () => {
         </div>
       </header>
 
-      {/* Routes Switcher */}
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
         <Routes>
           <Route path="/" element={<Navigate to="/menu" replace />} />
@@ -238,7 +224,6 @@ const AppContent: FC = () => {
         </Routes>
       </main>
 
-      {/* Cart Drawer */}
       {showCart && (
         <CartSummary 
           cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod} 
@@ -247,18 +232,17 @@ const AppContent: FC = () => {
         />
       )}
 
-      {/* Footer Navigation */}
-      <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <nav className="container mx-auto max-w-md flex justify-around items-center h-16">
-          <Link to="/menu" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/menu')}`}>
+      <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
+          <Link to="/menu" className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
             <ShoppingCart size={24} />
             <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
           </Link>
-          <Link to="/history" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/history')}`}>
+          <Link to="/history" className={`flex flex-col items-center justify-center w-full ${isActive('/history')}`}>
             <HistoryIcon size={24} />
             <span className="text-[10px] font-bold mt-1">ประวัติ</span>
           </Link>
-          <Link to="/register" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/register')}`}>
+          <Link to="/register" className={`flex flex-col items-center justify-center w-full ${isActive('/register')}`}>
             <User size={24} />
             <span className="text-[10px] font-bold mt-1">ข้อมูลฉัน</span>
           </Link>
@@ -268,7 +252,6 @@ const AppContent: FC = () => {
   );
 };
 
-// --- Export App พร้อม Router ---
 const App: FC = () => (
   <Router>
     <AppContent />
