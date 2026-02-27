@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
@@ -13,17 +14,13 @@ import CartSummary from './components/CartSummary';
 const LIFF_ID = process.env.VITE_LIFF_ID || '2009263888-F1O3wTGT'; 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiM_Fi6St5RPAjFBbM8QvCuFYAE_Ah_h5uDt4xznIODfAq-3eHKcXk_4eLaGwME53C/exec'; 
 
-enum Page {
-  Menu,
-  Register,
-  History,
-}
-
-const App: FC = () => {
+// --- Component หลักที่จะจัดการ Logic ทั้งหมด ---
+const AppContent: FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [liffObject, setLiffObject] = useState<Liff | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  // State สำหรับเก็บข้อมูลสมาชิกที่โหลดจาก Database
   const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,12 +28,10 @@ const App: FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [currentPage, setCurrentPage] = useState<Page>(Page.Menu);
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
-  // Initialize LIFF and Data
   useEffect(() => {
     const initializeApp = async () => {
       setIsLoading(true);
@@ -58,7 +53,6 @@ const App: FC = () => {
 
         setUserProfile({ userId: uid, displayName: dName, pictureUrl: pic });
 
-        // โหลดข้อมูลสมาชิกและสินค้าพร้อมกันเพื่อความเร็ว
         const [memberRes, prodRes] = await Promise.all([
           fetch(`${GAS_URL}?action=checkMember&lineId=${uid}`),
           fetch(`${GAS_URL}?action=getProducts`)
@@ -67,13 +61,11 @@ const App: FC = () => {
         const memberData = await memberRes.json();
         const prodData = await prodRes.json();
 
-        // จัดการข้อมูลสมาชิก
         if (memberData.isMember) {
           setIsRegistered(true);
-          setMemberInfo(memberData.data); // data จาก GAS: {name, address, phone}
+          setMemberInfo(memberData.data);
         }
 
-        // จัดการข้อมูลสินค้า
         if (prodData.status === 'success') {
           setProducts(prodData.data);
         }
@@ -87,12 +79,12 @@ const App: FC = () => {
     initializeApp();
   }, []);
 
-  // โหลดประวัติเมื่อเปลี่ยนมาหน้า History
+  // โหลดประวัติเมื่ออยู่ที่หน้า /history
   useEffect(() => {
-    if (currentPage === Page.History && userProfile?.userId) {
+    if (location.pathname === '/history' && userProfile?.userId) {
       loadHistory();
     }
-  }, [currentPage]);
+  }, [location.pathname, userProfile]);
 
   const loadHistory = async () => {
     setIsLoading(true);
@@ -121,12 +113,11 @@ const App: FC = () => {
       
       if (data.status === 'success') {
         setIsRegistered(true);
-        setMemberInfo({ name, phone, address }); // อัปเดตข้อมูลใน UI ทันที
-        alert('บันทึกข้อมูลสำเร็จ');
-        liff.closeWindow()
+        setMemberInfo({ name, phone, address });
+        alert('บันทึกข้อมูลเรียบร้อย');
         
-        // ถ้าลงทะเบียนสำเร็จ ให้กลับไปหน้าสั่งซื้อต่
-        setCurrentPage(Page.Menu);
+        // หลังจากลงทะเบียนเสร็จ ให้เด้งกลับไปหน้าแรก
+        navigate('/menu');
       }
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
@@ -154,8 +145,8 @@ const App: FC = () => {
   const handleCheckout = () => {
     if (!isRegistered) {
       alert('กรุณาลงทะเบียนข้อมูลจัดส่งก่อนสั่งซื้อ');
-      setCurrentPage(Page.Register);
       setShowCart(false);
+      navigate('/register');
     } else {
       handleConfirmOrder();
     }
@@ -180,29 +171,27 @@ const App: FC = () => {
       const data = await res.json();
 
       if (data.status === 'success') {
-        // ส่ง Flex Message หรือ Text เข้า LINE (ถ้าทำในเครื่องจริง)
         if (liffObject && liffObject.isInClient()) {
             const summary = `🛒 สั่งซื้อสำเร็จ!\nรหัสออเดอร์: ${data.orderId}\nยอดรวม: ${cartTotal}.-`;
             await liffObject.sendMessages([{ type: 'text', text: summary }]);
         }
-        alert('ส่งคำสั่งซื้อเรียบร้อย! ขอบคุณที่ใช้บริการครับ');
+        alert('ส่งคำสั่งซื้อเรียบร้อย!');
         setCart([]);
         setShowCart(false);
-        setCurrentPage(Page.History);
-        if (liff.isInClient()) {
-          liff.closeWindow(); 
-        }
+        navigate('/history');
       }
     } catch (error) {
-        alert('ไม่สามารถส่งคำสั่งซื้อได้ โปรดตรวจสอบอินเทอร์เน็ต');
+        alert('ไม่สามารถส่งคำสั่งซื้อได้');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ฟังก์ชันช่วยเช็คหน้าปัจจุบันเพื่อเปลี่ยนสีเมนู
+  const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
+
   return (
     <div className="font-sans bg-gray-50 min-h-screen pb-20 overflow-x-hidden">
-      {/* Loading Overlay */}
       {isLoading && (
         <div className="fixed inset-0 bg-white/80 z-[60] flex flex-col items-center justify-center backdrop-blur-sm">
            <Loader2 className="animate-spin text-blue-600 mb-2" size={48} />
@@ -231,7 +220,7 @@ const App: FC = () => {
           >
             <ShoppingCart size={22} />
             {totalQuantity > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white">
                 {totalQuantity}
               </span>
             )}
@@ -239,68 +228,51 @@ const App: FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Routes Switcher */}
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
-        {currentPage === Page.Menu && (
-          <Menu products={products} isLoading={isLoading} addToCart={addToCart} />
-        )}
-        
-        {currentPage === Page.Register && (
-          <Register 
-            onRegister={handleRegister} 
-            isRegistered={isRegistered} 
-            initialData={memberInfo} 
-          />
-        )}
-        
-        {currentPage === Page.History && (
-          <History orders={orders} isLoading={isLoading} />
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to="/menu" replace />} />
+          <Route path="/menu" element={<Menu products={products} isLoading={isLoading} addToCart={addToCart} />} />
+          <Route path="/register" element={<Register onRegister={handleRegister} isRegistered={isRegistered} initialData={memberInfo} />} />
+          <Route path="/history" element={<History orders={orders} isLoading={isLoading} />} />
+        </Routes>
       </main>
 
-      {/* Cart Summary Drawer */}
+      {/* Cart Drawer */}
       {showCart && (
         <CartSummary 
-          cart={cart}
-          cartTotal={cartTotal}
-          deliveryMethod={deliveryMethod}
-          setDeliveryMethod={setDeliveryMethod}
-          setShowCart={setShowCart}
-          isRegistered={isRegistered}
-          handleCheckout={handleCheckout}
+          cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod} 
+          setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
+          isRegistered={isRegistered} handleCheckout={handleCheckout} 
         />
       )}
 
-      {/* Bottom Navigation */}
+      {/* Footer Navigation */}
       <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <nav className="container mx-auto max-w-md flex justify-around items-center h-16">
-          <button 
-            onClick={() => {setCurrentPage(Page.Menu); setShowCart(false);}} 
-            className={`flex flex-col items-center justify-center w-full transition-colors ${currentPage === Page.Menu ? 'text-blue-600' : 'text-gray-400'}`}
-          >
+          <Link to="/menu" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/menu')}`}>
             <ShoppingCart size={24} />
             <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
-          </button>
-          
-          <button 
-            onClick={() => {setCurrentPage(Page.History); setShowCart(false);}} 
-            className={`flex flex-col items-center justify-center w-full transition-colors ${currentPage === Page.History ? 'text-blue-600' : 'text-gray-400'}`}
-          >
+          </Link>
+          <Link to="/history" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/history')}`}>
             <HistoryIcon size={24} />
             <span className="text-[10px] font-bold mt-1">ประวัติ</span>
-          </button>
-          
-          <button 
-            onClick={() => {setCurrentPage(Page.Register); setShowCart(false);}} 
-            className={`flex flex-col items-center justify-center w-full transition-colors ${currentPage === Page.Register ? 'text-blue-600' : 'text-gray-400'}`}
-          >
+          </Link>
+          <Link to="/register" className={`flex flex-col items-center justify-center w-full transition-colors ${isActive('/register')}`}>
             <User size={24} />
             <span className="text-[10px] font-bold mt-1">ข้อมูลฉัน</span>
-          </button>
+          </Link>
         </nav>
       </footer>
     </div>
   );
 };
+
+// --- Export App พร้อม Router ---
+const App: FC = () => (
+  <Router>
+    <AppContent />
+  </Router>
+);
 
 export default App;
