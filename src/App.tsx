@@ -151,30 +151,82 @@ const AppContent: FC = () => {
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
-        // เพิ่ม Headers เป็น text/plain เพื่อป้องกันปัญหา CORS กับ GAS
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ 
           action: 'submitOrder', 
           payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod } 
         }),
       });
       
-      // ดึงค่าเป็น Text ก่อน เผื่อ GAS พ่น HTML Error ออกมาจะได้ไม่พัง
       const responseText = await res.text();
       const data = JSON.parse(responseText);
 
       if (data.status === 'success') {
         
-        // 🟢 แยกดักจับ Error ของ liff.sendMessages ออกมาต่างหาก
+        // 🟢 ส่วนที่แก้ไข: สร้าง Flex Message แบบสลิปใบเสร็จ
         if (liff.isInClient()) {
           try {
-            const summary = `🛒 สั่งซื้อสำเร็จ!\nรหัสออเดอร์: ${data.orderId}\nยอดรวม: ${cartTotal}.-`;
-            await liff.sendMessages([{ type: 'text', text: summary }]);
+            // 1. สร้างก้อนข้อมูลรายการสินค้าแต่ละรายการ
+            const itemBoxes = cart.map(item => ({
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                { type: "text", text: `${item.name} (${item.size}) x${item.quantity}`, size: "sm", color: "#555555", flex: 0 },
+                { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end" }
+              ]
+            }));
+
+            // 2. ประกอบร่างเป็น Flex Message โครงสร้างแบบ Receipt
+            const flexMessage: any = {
+              type: "flex",
+              altText: `บิลสั่งซื้อ ${data.orderId}`,
+              contents: {
+                type: "bubble",
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    { type: "text", text: "RECEIPT", weight: "bold", color: "#1DB446", size: "sm" },
+                    { type: "text", text: "รายการสั่งซื้อ", weight: "bold", size: "xxl", margin: "md" },
+                    { type: "text", text: `รหัส: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      margin: "xxl",
+                      spacing: "sm",
+                      contents: itemBoxes // ใส่รายการสินค้าที่ map ไว้ตรงนี้
+                    },
+                    { type: "separator", margin: "xxl" },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      margin: "md",
+                      contents: [
+                        { type: "text", text: "วิธีจัดส่ง", size: "sm", color: "#555555" },
+                        { type: "text", text: deliveryMethod, size: "sm", color: "#111111", align: "end" }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      margin: "md",
+                      contents: [
+                        { type: "text", text: "ยอดรวมทั้งสิ้น", size: "sm", color: "#555555" },
+                        { type: "text", text: `฿${cartTotal}`, size: "lg", color: "#ff0000", align: "end", weight: "bold" }
+                      ]
+                    }
+                  ]
+                },
+                styles: { footer: { separator: true } }
+              }
+            };
+
+            // 3. สั่งยิง Flex Message เข้าแชท
+            await liff.sendMessages([flexMessage]);
+
           } catch (msgError) {
-            console.warn('ไม่สามารถส่งข้อความเข้าแชทได้ (อาจไม่ได้เปิด Scope chat_message.write):', msgError);
-            // ถึงส่งข้อความไม่ได้ ก็ไม่ต้องให้ระบบแอปพัง
+            console.warn('ไม่สามารถส่งข้อความเข้าแชทได้:', msgError);
           }
         }
 
@@ -188,7 +240,6 @@ const AppContent: FC = () => {
 
     } catch (error: any) {
       console.error("Order Submit Error:", error);
-      // แจ้งเตือนสาเหตุที่แท้จริงออกมา จะได้รู้ว่าพังที่อะไร
       alert(`ไม่สามารถส่งคำสั่งซื้อได้: ${error.message}`);
     } finally {
       setIsLoading(false);
