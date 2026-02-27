@@ -11,7 +11,7 @@ import Register from './components/Register';
 import History from './components/History';
 import CartSummary from './components/CartSummary';
 
-const LIFF_ID = process.env.VITE_LIFF_ID || '2009263888-F1O3wTGT'; 
+const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiM_Fi6St5RPAjFBbM8QvCuFYAE_Ah_h5uDt4xznIODfAq-3eHKcXk_4eLaGwME53C/exec'; 
 
 const AppContent: FC = () => {
@@ -33,33 +33,31 @@ const AppContent: FC = () => {
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
   useEffect(() => {
-    // ถ้าเคยรันไปแล้วให้ข้ามเลย (ป้องกัน StrictMode รัน 2 รอบ)
-    if (isInitialized.current) return;
-    isInitialized.current = true;
+  if (isInitialized.current) return;
+  isInitialized.current = true;
 
-    const initializeApp = async () => {
+  const initializeApp = async () => {
+    try {
+      // 1. Init LIFF ก่อนอย่างอื่น
+      await liff.init({ liffId: LIFF_ID });
+
+      // 2. ถ้าไม่ได้เปิดใน LINE (เช่น เปิดใน Chrome) ให้ Login ก่อน
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return; // หยุดทำงานเพื่อรอให้หน้าเว็บ Redirect ไป Login
+      }
+
+      // 3. ดึง Profile
+      const profile = await liff.getProfile();
+      const uid = profile.userId;
+      setUserProfile({ 
+        userId: uid, 
+        displayName: profile.displayName, 
+        pictureUrl: profile.pictureUrl || '' 
+      });
+
+      // 4. ดึงข้อมูลจาก GAS (ใส่ try-catch แยกเฉพาะส่วนเพื่อไม่ให้แอปตายถ้า GAS ช้า)
       try {
-        let uid = 'U_MOCK_12345';
-        let dName = 'Mock User';
-        let pic = '';
-
-        if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID') {
-          await liff.init({ liffId: LIFF_ID });
-          
-          if (!liff.isLoggedIn()) {
-            liff.login(); // ถ้าไม่ได้ล็อกอิน ให้ส่งไปหน้าล็อกอิน
-            return; 
-          }
-
-          const profile = await liff.getProfile();
-          uid = profile.userId;
-          dName = profile.displayName;
-          pic = profile.pictureUrl || '';
-        }
-
-        setUserProfile({ userId: uid, displayName: dName, pictureUrl: pic });
-
-        // ดึงข้อมูลเบื้องต้น
         const [memberRes, prodRes] = await Promise.all([
           fetch(`${GAS_URL}?action=checkMember&lineId=${uid}`),
           fetch(`${GAS_URL}?action=getProducts`)
@@ -72,20 +70,24 @@ const AppContent: FC = () => {
           setIsRegistered(true);
           setMemberInfo(memberData.data);
         }
-
         if (prodData.status === 'success') {
           setProducts(prodData.data);
         }
-
-      } catch (error) {
-        console.error('Initialization failed', error);
-      } finally {
-        setIsLoading(false);
+      } catch (apiError) {
+        console.error("GAS Fetch Error:", apiError);
+        // ถึง GAS จะพัง แต่ก็ควรให้หน้าเว็บโชว์ (แม้ไม่มีสินค้า) เพื่อไม่ให้โหลดค้าง
       }
-    };
 
-    initializeApp();
-  }, []); // รันครั้งเดียวเมื่อเมาท์
+    } catch (error) {
+      console.error('LIFF Init Failed', error);
+    } finally {
+      // ปิด Loading เมื่อทุกอย่าง (ที่จำเป็น) เสร็จแล้ว
+      setIsLoading(false); 
+    }
+  };
+
+  initializeApp();
+}, []);
 
   // แก้ไขส่วนดึงประวัติ: ให้ทำงานเมื่อเปิดหน้า History เท่านั้น
   useEffect(() => {
