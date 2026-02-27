@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'; // เพิ่ม useRef
+import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import liff from '@line/liff';
@@ -17,15 +17,16 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nL
 const AppContent: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // ใช้ ref เพื่อป้องกันการ init ซ้ำซ้อน
   const isInitialized = useRef(false);
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // เริ่มต้นเป็น true เลย
+  
+  // เพิ่ม State นี้เพื่อป้องกัน React Router ตีกับ LIFF
+  const [isLiffReady, setIsLiffReady] = useState(false); 
+  const [isLoading, setIsLoading] = useState(true);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -33,63 +34,59 @@ const AppContent: FC = () => {
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
   useEffect(() => {
-  if (isInitialized.current) return;
-  isInitialized.current = true;
+    if (isInitialized.current) return;
+    isInitialized.current = true;
 
-  const initializeApp = async () => {
-    try {
-      // 1. Init LIFF ก่อนอย่างอื่น
-      await liff.init({ liffId: LIFF_ID });
-
-      // 2. ถ้าไม่ได้เปิดใน LINE (เช่น เปิดใน Chrome) ให้ Login ก่อน
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return; // หยุดทำงานเพื่อรอให้หน้าเว็บ Redirect ไป Login
-      }
-
-      // 3. ดึง Profile
-      const profile = await liff.getProfile();
-      const uid = profile.userId;
-      setUserProfile({ 
-        userId: uid, 
-        displayName: profile.displayName, 
-        pictureUrl: profile.pictureUrl || '' 
-      });
-
-      // 4. ดึงข้อมูลจาก GAS (ใส่ try-catch แยกเฉพาะส่วนเพื่อไม่ให้แอปตายถ้า GAS ช้า)
+    const initializeApp = async () => {
       try {
-        const [memberRes, prodRes] = await Promise.all([
-          fetch(`${GAS_URL}?action=checkMember&lineId=${uid}`),
-          fetch(`${GAS_URL}?action=getProducts`)
-        ]);
+        await liff.init({ liffId: LIFF_ID });
 
-        const memberData = await memberRes.json();
-        const prodData = await prodRes.json();
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return; // หยุดการทำงานตรงนี้ ปล่อยให้ระบบเด้งไปล็อกอิน
+        }
 
-        if (memberData.isMember) {
-          setIsRegistered(true);
-          setMemberInfo(memberData.data);
+        const profile = await liff.getProfile();
+        setUserProfile({ 
+          userId: profile.userId, 
+          displayName: profile.displayName, 
+          pictureUrl: profile.pictureUrl || '' 
+        });
+
+        // ⭐ LIFF อ่านค่าเสร็จแล้ว อนุญาตให้ React Router ทำงานได้!
+        setIsLiffReady(true); 
+
+        try {
+          const [memberRes, prodRes] = await Promise.all([
+            fetch(`${GAS_URL}?action=checkMember&lineId=${profile.userId}`),
+            fetch(`${GAS_URL}?action=getProducts`)
+          ]);
+
+          const memberData = await memberRes.json();
+          const prodData = await prodRes.json();
+
+          if (memberData.isMember) {
+            setIsRegistered(true);
+            setMemberInfo(memberData.data);
+          }
+          if (prodData.status === 'success') {
+            setProducts(prodData.data);
+          }
+        } catch (apiError) {
+          console.error("GAS Fetch Error:", apiError);
         }
-        if (prodData.status === 'success') {
-          setProducts(prodData.data);
-        }
-      } catch (apiError) {
-        console.error("GAS Fetch Error:", apiError);
-        // ถึง GAS จะพัง แต่ก็ควรให้หน้าเว็บโชว์ (แม้ไม่มีสินค้า) เพื่อไม่ให้โหลดค้าง
+
+      } catch (error) {
+        console.error('LIFF Init Failed', error);
+        setIsLiffReady(true); // เผื่อกรณีเปิดในคอมแล้วพัง ก็ยังให้เว็บโชว์ได้
+      } finally {
+        setIsLoading(false); 
       }
+    };
 
-    } catch (error) {
-      console.error('LIFF Init Failed', error);
-    } finally {
-      // ปิด Loading เมื่อทุกอย่าง (ที่จำเป็น) เสร็จแล้ว
-      setIsLoading(false); 
-    }
-  };
+    initializeApp();
+  }, []);
 
-  initializeApp();
-}, []);
-
-  // แก้ไขส่วนดึงประวัติ: ให้ทำงานเมื่อเปิดหน้า History เท่านั้น
   useEffect(() => {
     if (location.pathname === '/history' && userProfile?.userId) {
       const loadHistory = async () => {
@@ -112,10 +109,7 @@ const AppContent: FC = () => {
     setIsLoading(true);
     try {
       const payload = { lineId: userProfile?.userId, name, phone, address };
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'register', payload }),
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'register', payload }) });
       const data = await res.json();
       if (data.status === 'success') {
         setIsRegistered(true);
@@ -195,7 +189,7 @@ const AppContent: FC = () => {
         <div className="container mx-auto flex justify-between items-center max-w-md">
           <div className="flex items-center gap-3">
             {userProfile?.pictureUrl ? (
-              <img src={userProfile.pictureUrl} className="w-10 h-10 rounded-full border-2 border-blue-100" />
+              <img src={userProfile.pictureUrl} alt="profile" className="w-10 h-10 rounded-full border-2 border-blue-100" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><User size={24}/></div>
             )}
@@ -218,12 +212,15 @@ const AppContent: FC = () => {
       </header>
 
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
-        <Routes>
-          <Route path="/" element={<Navigate to="/menu" replace />} />
-          <Route path="/menu" element={<Menu products={products} isLoading={isLoading} addToCart={addToCart} />} />
-          <Route path="/register" element={<Register onRegister={handleRegister} isRegistered={isRegistered} initialData={memberInfo} />} />
-          <Route path="/history" element={<History orders={orders} isLoading={isLoading} />} />
-        </Routes>
+        {/* ⭐ ซ่อน Routes ไว้จนกว่า LIFF จะทำงานเสร็จ ป้องกันการ Redirect ตัดหน้า */}
+        {isLiffReady && (
+          <Routes>
+            <Route path="/" element={<Navigate to="/menu" replace />} />
+            <Route path="/menu" element={<Menu products={products} isLoading={isLoading} addToCart={addToCart} />} />
+            <Route path="/register" element={<Register onRegister={handleRegister} isRegistered={isRegistered} initialData={memberInfo} />} />
+            <Route path="/history" element={<History orders={orders} isLoading={isLoading} />} />
+          </Routes>
+        )}
       </main>
 
       {showCart && (
@@ -234,22 +231,25 @@ const AppContent: FC = () => {
         />
       )}
 
-      <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
-          <Link to="/menu" className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
-            <ShoppingCart size={24} />
-            <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
-          </Link>
-          <Link to="/history" className={`flex flex-col items-center justify-center w-full ${isActive('/history')}`}>
-            <HistoryIcon size={24} />
-            <span className="text-[10px] font-bold mt-1">ประวัติ</span>
-          </Link>
-          <Link to="/register" className={`flex flex-col items-center justify-center w-full ${isActive('/register')}`}>
-            <User size={24} />
-            <span className="text-[10px] font-bold mt-1">ข้อมูลฉัน</span>
-          </Link>
-        </nav>
-      </footer>
+      {/* ⭐ ซ่อน Footer ไว้ก่อนด้วยเหมือนกันเพื่อความสวยงามและกันคนกดก่อนโหลดเสร็จ */}
+      {isLiffReady && (
+        <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
+            <Link to="/menu" className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
+              <ShoppingCart size={24} />
+              <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
+            </Link>
+            <Link to="/history" className={`flex flex-col items-center justify-center w-full ${isActive('/history')}`}>
+              <HistoryIcon size={24} />
+              <span className="text-[10px] font-bold mt-1">ประวัติ</span>
+            </Link>
+            <Link to="/register" className={`flex flex-col items-center justify-center w-full ${isActive('/register')}`}>
+              <User size={24} />
+              <span className="text-[10px] font-bold mt-1">ข้อมูลฉัน</span>
+            </Link>
+          </nav>
+        </footer>
+      )}
     </div>
   );
 };
