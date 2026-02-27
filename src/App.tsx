@@ -10,7 +10,7 @@ import Register from './components/Register';
 import History from './components/History';
 import CartSummary from './components/CartSummary';
 
-const LIFF_ID = process.env.VITE_LIFF_ID || 'YOUR_LIFF_ID'; 
+const LIFF_ID = process.env.VITE_LIFF_ID || '2009263888-F1O3wTGT'; 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiM_Fi6St5RPAjFBbM8QvCuFYAE_Ah_h5uDt4xznIODfAq-3eHKcXk_4eLaGwME53C/exec'; 
 
 enum Page {
@@ -123,6 +123,7 @@ const App: FC = () => {
         setIsRegistered(true);
         setMemberInfo({ name, phone, address }); // อัปเดตข้อมูลใน UI ทันที
         alert('บันทึกข้อมูลสำเร็จ');
+        liff.closeWindow()
         
         // ถ้าลงทะเบียนสำเร็จ ให้กลับไปหน้าสั่งซื้อต่อ
         setCurrentPage(Page.Menu);
@@ -188,6 +189,9 @@ const App: FC = () => {
         setCart([]);
         setShowCart(false);
         setCurrentPage(Page.History);
+        if (liff.isInClient()) {
+          liff.closeWindow(); 
+        }
       }
     } catch (error) {
         alert('ไม่สามารถส่งคำสั่งซื้อได้ โปรดตรวจสอบอินเทอร์เน็ต');
