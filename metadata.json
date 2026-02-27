@@ -1,0 +1,5 @@
+{
+  "name": "LINE LIFF E-commerce Store",
+  "description": "A simple e-commerce store application running on LINE LIFF, built with React and Tailwind CSS.",
+  "requestFramePermissions": []
+}
