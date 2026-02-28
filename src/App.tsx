@@ -43,10 +43,6 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          {/* แสดง ID สินค้า */}
-          <div className="inline-flex items-center gap-1 bg-white text-gray-600 px-2 py-0.5 rounded-md text-xs font-mono font-bold mb-2 shadow-sm border border-gray-100">
-            <Hash size={12} /> ID: {variant.id}
-          </div>
           
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
             {variant.size && (
@@ -461,6 +457,7 @@ const AppContent: FC = () => {
           cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod} 
           setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
           isRegistered={isRegistered} handleCheckout={handleCheckout} 
+          userAddress={memberInfo?.address} // 🟢 เพิ่มบรรทัดนี้เข้าไป
         />
       )}
 
