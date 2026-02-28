@@ -89,7 +89,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         <div className="space-y-4">
           <div className="px-1">
             <h2 className="font-bold text-xl text-gray-800 leading-tight">{selectedName}</h2>
-            <p className="text-sm text-gray-500">เลือกขนาดที่ต้องการ (ระบุตามรหัสสินค้า)</p>
+            <p className="text-sm text-gray-500">เลือกขนาดที่ต้องการ</p>
           </div>
           
           {variants.map((variant) => (
@@ -109,11 +109,6 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
     <div className="bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm hover:border-blue-100 transition-all">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          {/* แสดง ID สินค้าโดดเด่น */}
-          <div className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs font-mono font-bold mb-2">
-            <Hash size={12} /> ID: {variant.id}
-          </div>
-          
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             {/* เช็คว่ามีข้อมูลไหม ถ้ามีถึงจะแสดงผล */}
             {variant.size && (

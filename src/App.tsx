@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { FC } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import liff from '@line/liff';
@@ -35,73 +35,89 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
   return themes[index];
 };
 
-// 🟢 Component การ์ดสินค้าสำหรับหน้าค้นหา (ยกดีไซน์มาจาก VariantCard)
-const SearchProductCard: FC<{ product: Product; onAdd: (p: Product, q: number) => void }> = ({ product, onAdd }) => {
+// 🟢 Component รายการสินค้าย่อย (แสดงสเปกและปุ่มหยิบลงตะกร้า)
+const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState(1);
-  const theme = getCategoryColor(product.category);
 
   return (
-    <div className={`bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm hover:border-blue-100 transition-all border-l-4 ${theme.card}`}>
-      
-      {/* ส่วนป้ายหมวดหมู่ และ ชื่อสินค้า (เพิ่มเข้ามาเพื่อให้รู้ว่าคืออะไรตอนค้นหา) */}
-      <div className="mb-3">
-        <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
-          หมวด: {product.category || 'ทั่วไป'}
-        </span>
-        <h3 className="text-base font-bold text-gray-800 leading-tight">{product.name}</h3>
-      </div>
-
-      <div className="flex justify-between items-start mb-4">
+    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+      <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          {/* แสดง ID สินค้าโดดเด่น */}
-          <div className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs font-mono font-bold mb-2">
-            <Hash size={12} /> ID: {product.id}
+          {/* แสดง ID สินค้า */}
+          <div className="inline-flex items-center gap-1 bg-white text-gray-600 px-2 py-0.5 rounded-md text-xs font-mono font-bold mb-2 shadow-sm border border-gray-100">
+            <Hash size={12} /> ID: {variant.id}
           </div>
           
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{product.size || '-'}</span></p>
-            <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(product as any).thickness || '-'}</span></p>
-            <p className="text-gray-500">สี: <span className="text-gray-900 font-bold">{(product as any).color || '-'}</span></p>
-            <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(product as any).weight || '-'}</span></p>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+            {variant.size && (
+              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
+            )}
+            {(variant as any).thickness && (
+              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(variant as any).thickness}</span></p>
+            )}
+            {(variant as any).weight && (
+              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(variant as any).weight}</span></p>
+            )}
           </div>
         </div>
-        
-        {(product as any).image && (
-          <img src={(product as any).image} className="w-16 h-16 object-cover rounded-xl border" alt={product.id} />
-        )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-dashed pt-4">
-        <div className="text-xl font-black text-blue-600">{product.price}.-</div>
+      <div className="flex items-center justify-between border-t border-gray-200 border-dashed pt-3">
+        <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* ตัวเลือกจำนวน */}
-          <div className="flex items-center border rounded-xl bg-gray-50">
-            <button 
-              onClick={() => setQty(q => Math.max(1, q - 1))} 
-              className="p-2 text-gray-400 active:text-blue-600"
-            >
-              <Minus size={16} />
+          <div className="flex items-center border rounded-lg bg-white">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="p-1.5 text-gray-400 active:text-blue-600">
+              <Minus size={14} />
             </button>
-            <span className="w-6 text-center font-bold text-gray-700">{qty}</span>
-            <button 
-              onClick={() => setQty(q => q + 1)} 
-              className="p-2 text-gray-400 active:text-blue-600"
-            >
-              <Plus size={16} />
+            <span className="w-5 text-center font-bold text-gray-700 text-sm">{qty}</span>
+            <button onClick={() => setQty(q => q + 1)} className="p-1.5 text-gray-400 active:text-blue-600">
+              <Plus size={14} />
             </button>
           </div>
 
           <button
             onClick={() => {
-              onAdd(product, qty);
+              onAdd(variant, qty);
               setQty(1);
             }}
-            className="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
-            เพิ่มลงตะกร้า
+            เพิ่ม
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// 🟢 Component กล่องหลัก (จัดกลุ่มตามชื่อสินค้า)
+const GroupedSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
+  const theme = getCategoryColor(group.category);
+  // ดึงรูปภาพจากสินค้ารายการแรกที่มีรูป
+  const firstImage = group.variants.find((v: any) => v.image)?.image as string | undefined;
+
+  return (
+    <div className={`bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm border-l-4 ${theme.card}`}>
+      {/* ส่วนหัว: รูปภาพ หมวดหมู่ และ ชื่อสินค้า */}
+      <div className="flex gap-4 items-start mb-4">
+        {firstImage && (
+          <img src={firstImage} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={group.name} />
+        )}
+        <div>
+          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
+            หมวด: {group.category || 'ทั่วไป'}
+          </span>
+          <h3 className="text-base font-bold text-gray-800 leading-tight">{group.name}</h3>
+        </div>
+      </div>
+
+      {/* ส่วนรายละเอียดสินค้าย่อย */}
+      <div className="space-y-3">
+        {group.variants.map((variant) => (
+          <SearchVariantItem key={variant.id} variant={variant} onAdd={onAdd} />
+        ))}
       </div>
     </div>
   );
@@ -327,10 +343,29 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
+  // ค้นหาสินค้า
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    product.id.toLowerCase().includes(searchTerm.toLowerCase()) // 🟢 เพิ่มให้ค้นหาจาก ID ได้ด้วย
+    product.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // 🟢 จัดกลุ่มสินค้าที่ค้นหาเจอตาม "หมวดหมู่+ชื่อ"
+  const groupedFilteredProducts = useMemo(() => {
+    const groups = filteredProducts.reduce((acc, product) => {
+      const key = `${product.category}|${product.name}`;
+      if (!acc[key]) {
+        acc[key] = {
+          name: product.name,
+          category: product.category,
+          variants: []
+        };
+      }
+      acc[key].variants.push(product);
+      return acc;
+    }, {} as Record<string, { name: string, category: string, variants: Product[] }>);
+    
+    return Object.values(groups);
+  }, [filteredProducts]);
 
   return (
     <div className="font-sans bg-gray-50 min-h-screen pb-20 overflow-x-hidden">
@@ -389,17 +424,17 @@ const AppContent: FC = () => {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={
               searchTerm ? (
-                // 🟢 โหมดค้นหา: เรียกใช้ SearchProductCard ที่หน้าตาเหมือนกล่องใน Menu.tsx
+                // 🟢 โหมดค้นหา: เรียกใช้ GroupedSearchProductCard ที่จัดกลุ่มแล้ว
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
-                    พบ {filteredProducts.length} รายการ จากการค้นหา "{searchTerm}"
+                    พบ {filteredProducts.length} รายการ ({groupedFilteredProducts.length} กลุ่มสินค้า)
                   </p>
                   
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map(product => (
-                      <SearchProductCard 
-                        key={product.id} 
-                        product={product} 
+                  {groupedFilteredProducts.length > 0 ? (
+                    groupedFilteredProducts.map((group, index) => (
+                      <GroupedSearchProductCard 
+                        key={index} 
+                        group={group} 
                         onAdd={addToCart} 
                       />
                     ))
