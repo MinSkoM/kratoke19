@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
-import { ShoppingCart, User, History as HistoryIcon, Loader2, Search } from 'lucide-react';
+import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, Hash } from 'lucide-react';
 
 import Menu from './components/Menu';
 import Register from './components/Register';
@@ -34,6 +34,79 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
   const index = Math.abs(hash) % themes.length;
   return themes[index];
 };
+
+// 🟢 Component การ์ดสินค้าสำหรับหน้าค้นหา (ยกดีไซน์มาจาก VariantCard)
+const SearchProductCard: FC<{ product: Product; onAdd: (p: Product, q: number) => void }> = ({ product, onAdd }) => {
+  const [qty, setQty] = useState(1);
+  const theme = getCategoryColor(product.category);
+
+  return (
+    <div className={`bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm hover:border-blue-100 transition-all border-l-4 ${theme.card}`}>
+      
+      {/* ส่วนป้ายหมวดหมู่ และ ชื่อสินค้า (เพิ่มเข้ามาเพื่อให้รู้ว่าคืออะไรตอนค้นหา) */}
+      <div className="mb-3">
+        <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
+          หมวด: {product.category || 'ทั่วไป'}
+        </span>
+        <h3 className="text-base font-bold text-gray-800 leading-tight">{product.name}</h3>
+      </div>
+
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          {/* แสดง ID สินค้าโดดเด่น */}
+          <div className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs font-mono font-bold mb-2">
+            <Hash size={12} /> ID: {product.id}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{product.size || '-'}</span></p>
+            <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(product as any).thickness || '-'}</span></p>
+            <p className="text-gray-500">สี: <span className="text-gray-900 font-bold">{(product as any).color || '-'}</span></p>
+            <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(product as any).weight || '-'}</span></p>
+          </div>
+        </div>
+        
+        {(product as any).image && (
+          <img src={(product as any).image} className="w-16 h-16 object-cover rounded-xl border" alt={product.id} />
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-dashed pt-4">
+        <div className="text-xl font-black text-blue-600">{product.price}.-</div>
+        
+        <div className="flex items-center gap-3">
+          {/* ตัวเลือกจำนวน */}
+          <div className="flex items-center border rounded-xl bg-gray-50">
+            <button 
+              onClick={() => setQty(q => Math.max(1, q - 1))} 
+              className="p-2 text-gray-400 active:text-blue-600"
+            >
+              <Minus size={16} />
+            </button>
+            <span className="w-6 text-center font-bold text-gray-700">{qty}</span>
+            <button 
+              onClick={() => setQty(q => q + 1)} 
+              className="p-2 text-gray-400 active:text-blue-600"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              onAdd(product, qty);
+              setQty(1);
+            }}
+            className="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
+          >
+            เพิ่มลงตะกร้า
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const AppContent: FC = () => {
   const navigate = useNavigate();
@@ -254,9 +327,9 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
-  // กรองสินค้าตามคำค้นหา
   const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    product.id.toLowerCase().includes(searchTerm.toLowerCase()) // 🟢 เพิ่มให้ค้นหาจาก ID ได้ด้วย
   );
 
   return (
@@ -303,7 +376,7 @@ const AppContent: FC = () => {
             </div>
             <input
               type="text"
-              placeholder="ค้นหาสินค้าที่ต้องการ..."
+              placeholder="ค้นหาชื่อ หรือ รหัสสินค้า (ID)..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -316,58 +389,20 @@ const AppContent: FC = () => {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={
               searchTerm ? (
-                // 🟢 โหมดค้นหา: แสดงผลลัพธ์พร้อมระบบสีแยกตามหมวดหมู่
+                // 🟢 โหมดค้นหา: เรียกใช้ SearchProductCard ที่หน้าตาเหมือนกล่องใน Menu.tsx
                 <div className="space-y-4 animate-in fade-in duration-300">
-                  <p className="text-xs font-semibold text-gray-500 mb-2">
+                  <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
                     พบ {filteredProducts.length} รายการ จากการค้นหา "{searchTerm}"
                   </p>
                   
                   {filteredProducts.length > 0 ? (
-                    filteredProducts.map(product => {
-                      // ดึง Theme สีตามหมวดหมู่ของสินค้านั้นๆ
-                      const theme = getCategoryColor(product.category);
-
-                      return (
-                        <div key={product.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col border-l-4 ${theme.card}`}>
-                          
-                          {/* เปิดใช้งานส่วนนี้ได้ ถ้าระบบคุณมีคอลัมน์รูปภาพ */}
-                          {/* {(product as any).image && (
-                            <div className="w-full h-40 bg-gray-100">
-                              <img src={(product as any).image} alt={product.name} className="w-full h-full object-cover" />
-                            </div>
-                          )} */}
-
-                          <div className="p-4 flex flex-col gap-2">
-                            <div>
-                              {/* ป้ายบอกหมวดหมู่ พร้อมสีที่เปลี่ยนไปตามหมวด */}
-                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1.5 border ${theme.badge}`}>
-                                หมวด: {product.category || 'ทั่วไป'}
-                              </span>
-                              
-                              <h3 className="text-base font-bold text-gray-800 leading-tight">{product.name}</h3>
-                              
-                              {product.size && (
-                                <p className="text-sm text-gray-500 mt-1">ขนาด/สเปค: {product.size}</p>
-                              )}
-                              
-                              {(product as any).description && (
-                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{(product as any).description}</p>
-                              )}
-                            </div>
-                            
-                            <div className="flex justify-between items-end mt-2 pt-2 border-t border-gray-50">
-                              <p className="text-lg font-bold text-red-600">฿{product.price}</p>
-                              <button 
-                                onClick={() => addToCart(product)}
-                                className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"
-                              >
-                                + ใส่ตะกร้า
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
+                    filteredProducts.map(product => (
+                      <SearchProductCard 
+                        key={product.id} 
+                        product={product} 
+                        onAdd={addToCart} 
+                      />
+                    ))
                   ) : (
                     <div className="text-center py-12 bg-white rounded-xl border border-gray-100 shadow-sm">
                       <Search size={32} className="mx-auto text-gray-300 mb-2" />
