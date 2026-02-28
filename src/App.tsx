@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
-import { ShoppingCart, User, History as HistoryIcon, Loader2, Search } from 'lucide-react'; // 🟢 เพิ่มไอคอน Search
+import { ShoppingCart, User, History as HistoryIcon, Loader2, Search } from 'lucide-react';
 
 import Menu from './components/Menu';
 import Register from './components/Register';
@@ -32,7 +32,6 @@ const AppContent: FC = () => {
   const [showCart, setShowCart] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
-  // 🟢 เพิ่ม State สำหรับเก็บข้อความค้นหาสินค้า
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -168,7 +167,7 @@ const AppContent: FC = () => {
             const itemBoxes = cart.map(item => ({
               type: "box", layout: "horizontal",
               contents: [
-                { type: "text", text: `${item.name} (${item.size}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
+                { type: "text", text: `${item.name} (${item.size || ''}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
                 { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
               ]
             }));
@@ -214,7 +213,7 @@ const AppContent: FC = () => {
         alert('ส่งคำสั่งซื้อเรียบร้อย!');
         setCart([]);
         setShowCart(false);
-        setSearchTerm(''); // เคลียร์ช่องค้นหาหลังสั่งเสร็จ
+        setSearchTerm('');
 
         if (liff.isInClient()) {
           liff.closeWindow(); 
@@ -234,7 +233,7 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
-  // 🟢 กรองสินค้าจากคำที่ค้นหา ก่อนส่งไปให้หน้า Menu โชว์
+  // 🟢 กรองสินค้า
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -276,7 +275,6 @@ const AppContent: FC = () => {
 
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
         
-        {/* 🟢 แสดงช่องค้นหาเฉพาะหน้า Menu เท่านั้น */}
         {isLiffReady && location.pathname === '/menu' && (
           <div className="mb-4 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -295,8 +293,43 @@ const AppContent: FC = () => {
         {isLiffReady && (
           <Routes>
             <Route path="/" element={<Navigate to="/menu" replace />} />
-            {/* 🟢 เปลี่ยนจากการส่ง products เป็น filteredProducts */}
-            <Route path="/menu" element={<Menu products={filteredProducts} isLoading={isLoading} addToCart={addToCart} />} />
+            <Route path="/menu" element={
+              searchTerm ? (
+                // 🟢 โหมดค้นหา: แสดงผลลัพธ์แบบลิสต์เรียงกัน พร้อมโชว์หมวดหมู่
+                <div className="space-y-3 animate-in fade-in duration-300">
+                  <p className="text-xs font-semibold text-gray-500 mb-2">
+                    พบ {filteredProducts.length} รายการ
+                  </p>
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map(product => (
+                      <div key={product.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+                        <div className="flex-1">
+                          {/* ป้ายบอกหมวดหมู่ */}
+                          <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full mb-1 border border-blue-100">
+                            หมวด: {product.category || 'ทั่วไป'}
+                          </span>
+                          <h3 className="text-sm font-bold text-gray-800 leading-tight">{product.name}</h3>
+                          <p className="text-sm font-semibold text-red-600 mt-1">฿{product.price}</p>
+                        </div>
+                        <button 
+                          onClick={() => addToCart(product)}
+                          className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm"
+                        >
+                          + ใส่ตะกร้า
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 bg-white rounded-xl border border-gray-100 shadow-sm">
+                      <p className="text-gray-500 text-sm">ไม่พบสินค้า "{searchTerm}"</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // 🔴 โหมดปกติ (ไม่ได้พิมพ์ค้นหา): โชว์หน้า Menu.tsx แบบเดิมที่แยกหมวดหมู่
+                <Menu products={products} isLoading={isLoading} addToCart={addToCart} />
+              )
+            } />
             <Route path="/register" element={<Register onRegister={handleRegister} isRegistered={isRegistered} initialData={memberInfo} />} />
             <Route path="/history" element={<History orders={orders} isLoading={isLoading} />} />
           </Routes>
@@ -314,7 +347,7 @@ const AppContent: FC = () => {
       {isLiffReady && (
         <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
-            <Link to="/menu" className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
+            <Link to="/menu" onClick={() => setSearchTerm('')} className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
               <ShoppingCart size={24} />
               <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
             </Link>
