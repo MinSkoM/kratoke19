@@ -59,18 +59,22 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         </div>
       )}
 
-      {/* หน้า 2: เลือกชื่อรายการ (แสดง ID ตัวอย่างของกลุ่มนั้นๆ) */}
+      {/* หน้า 2: เลือกชื่อรายการ (แสดง ID ตัวอย่างของกลุ่มนั้นๆ และรูปภาพ) */}
       {selectedCategory && !selectedName && (
         <div className="space-y-3">
           <h2 className="font-bold text-lg text-gray-500 px-1">{selectedCategory}</h2>
           {productNamesInCategory.map((name) => {
+            // ดึงข้อมูลรายการแรกมาเพื่อเอารูปภาพ
             const firstItem = products.find(p => p.name === name && p.category === selectedCategory);
             return (
               <div key={name} onClick={() => setSelectedName(name)} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors">
+                
+                {/* 🟢 ย้ายรูปภาพมาไว้ตรงนี้ */}
+                {firstItem?.image && (
+                  <img src={firstItem.image} className="w-16 h-16 object-cover rounded-xl border border-gray-100" alt={name} />
+                )}
+
                 <div className="flex-1">
-                   <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-1 font-mono">
-                     <Hash size={10} /> {firstItem?.id.split(/[0-9]/)[0]}... {/* โชว์ตัวย่อรหัส */}
-                   </div>
                    <div className="font-bold text-gray-800">{name}</div>
                 </div>
                 <ChevronRight className="text-gray-400" />
@@ -97,7 +101,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   );
 };
 
-// --- Component ย่อยสำหรับ Variant (แสดง ID ชัดเจน) ---
+// --- Component ย่อยสำหรับ Variant (เอาการแสดงรูปภาพออกแล้ว) ---
 const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState(1);
 
@@ -111,16 +115,20 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
           </div>
           
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size || '-'}</span></p>
-            <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness || '-'}</span></p>
-            <p className="text-gray-500">สี: <span className="text-gray-900 font-bold">{variant.color || '-'}</span></p>
-            <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight || '-'}</span></p>
+            {/* เช็คว่ามีข้อมูลไหม ถ้ามีถึงจะแสดงผล */}
+            {variant.size && (
+              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
+            )}
+            
+            {variant.thickness && (
+              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>
+            )}
+            
+            {variant.weight && (
+              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>
+            )}
           </div>
         </div>
-        
-        {variant.image && (
-          <img src={variant.image} className="w-16 h-16 object-cover rounded-xl border" alt={variant.id} />
-        )}
       </div>
 
       <div className="flex items-center justify-between border-t border-dashed pt-4">
