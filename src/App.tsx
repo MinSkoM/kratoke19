@@ -13,6 +13,9 @@ import CartSummary from './components/CartSummary';
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
+const ADMIN_LINE_IDS = [
+  'U337d46fa56d556e946413c3650552d19', // เปลี่ยนเป็น ID ของคุณ
+];
 
 const AppContent: FC = () => {
   const navigate = useNavigate();
@@ -23,6 +26,7 @@ const AppContent: FC = () => {
   const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const isAdmin = ADMIN_LINE_IDS.includes(userProfile?.userId || '');
   
   // เพิ่ม State นี้เพื่อป้องกัน React Router ตีกับ LIFF
   const [isLiffReady, setIsLiffReady] = useState(false); 
@@ -149,20 +153,12 @@ const AppContent: FC = () => {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
-      // 1. ส่งข้อมูลไปบันทึกลง Google Sheet (หลังบ้านของร้าน)
       const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ 
           action: 'submitOrder', 
-          payload: { 
-            // บันทึกชื่อแอดมินคนทำรายการไว้ด้วย (เผื่อมีแอดมินหลายคน)
-            adminId: userProfile?.userId, 
-            cart, 
-            totalQuantity, 
-            totalPrice: cartTotal, 
-            shippingMethod: deliveryMethod 
-          } 
+          payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod } 
         }),
       });
       
@@ -171,95 +167,70 @@ const AppContent: FC = () => {
 
       if (data.status === 'success') {
         
-        // 🟢 2. สร้าง Flex Message ใบเสร็จเตรียมส่งให้ลูกค้า
         const itemBoxes = cart.map(item => ({
-          type: "box",
-          layout: "horizontal",
+          type: "box", layout: "horizontal",
           contents: [
             { type: "text", text: `${item.name} (${item.size}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
             { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
           ]
         }));
 
+        // Flex Message ใบเสร็จ
         const flexMessage: any = {
-          type: "flex",
-          altText: `บิลสั่งซื้อ ${data.orderId} (รอชำระเงิน)`,
+          type: "flex", altText: `บิลสั่งซื้อ ${data.orderId}`,
           contents: {
             type: "bubble",
             body: {
-              type: "box",
-              layout: "vertical",
+              type: "box", layout: "vertical",
               contents: [
-                { type: "text", text: "INVOICE", weight: "bold", color: "#0066FF", size: "sm" },
+                { type: "text", text: isAdmin ? "INVOICE (รอชำระเงิน)" : "RECEIPT", weight: "bold", color: isAdmin ? "#0066FF" : "#1DB446", size: "sm" },
                 { type: "text", text: "สรุปรายการสั่งซื้อ", weight: "bold", size: "xl", margin: "md" },
-                { type: "text", text: `รหัสบิล: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
+                { type: "text", text: `รหัส: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
+                { type: "separator", margin: "xxl" },
+                { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: itemBoxes },
                 { type: "separator", margin: "xxl" },
                 {
-                  type: "box",
-                  layout: "vertical",
-                  margin: "xxl",
-                  spacing: "sm",
-                  contents: itemBoxes 
-                },
-                { type: "separator", margin: "xxl" },
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  margin: "md",
-                  contents: [
-                    { type: "text", text: "วิธีจัดส่ง", size: "sm", color: "#555555" },
-                    { type: "text", text: deliveryMethod, size: "sm", color: "#111111", align: "end", weight: "bold" }
-                  ]
-                },
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  margin: "md",
+                  type: "box", layout: "horizontal", margin: "md",
                   contents: [
                     { type: "text", text: "ยอดรวมทั้งสิ้น", size: "sm", color: "#555555" },
                     { type: "text", text: `฿${cartTotal}`, size: "lg", color: "#ff0000", align: "end", weight: "bold" }
                   ]
-                },
-                { type: "separator", margin: "xxl" },
-                { type: "text", text: "กรุณาตรวจสอบรายการสินค้าและยืนยันในแชทครับ", size: "xs", color: "#888888", margin: "md", wrap: true }
+                }
               ]
             }
           }
         };
 
-        // 🟢 3. เปิดหน้าต่างให้แอดมินเลือกส่งแชทหาลูกค้า (Share Target Picker)
-        if (liff.isInClient() && liff.isApiAvailable('shareTargetPicker')) {
+        if (liff.isInClient()) {
           try {
-            const shareRes = await liff.shareTargetPicker([flexMessage]);
-            if (shareRes) {
-              alert('ส่งบิลให้ลูกค้าเรียบร้อยแล้ว!');
+            if (isAdmin) {
+              // 🟢 โหมดแอดมิน: เปิดหน้าต่างให้เลือกส่งหาลูกค้า
+              if (liff.isApiAvailable('shareTargetPicker')) {
+                const shareRes = await liff.shareTargetPicker([flexMessage]);
+                if (shareRes) alert('ส่งบิลให้ลูกค้าเรียบร้อยแล้ว!');
+              }
             } else {
-              alert('บันทึกออเดอร์แล้ว (แต่คุณกดยกเลิกการส่งบิลเข้าแชท)');
+              // 🟢 โหมดลูกค้าปกติ: ส่งเข้าห้องแชทของร้าน
+              await liff.sendMessages([flexMessage]);
+              alert('ส่งคำสั่งซื้อเรียบร้อย!');
             }
           } catch (msgError: any) {
-            console.error('Share Target Picker Error:', msgError);
-            alert(`⚠️ ไม่สามารถส่งบิลได้: ${msgError.message}`);
+            console.error('Message Error:', msgError);
+            alert(`⚠️ สั่งซื้อสำเร็จแต่ข้อความไม่เด้ง: ${msgError.message}`);
           }
         } else {
-          alert('บันทึกออเดอร์เรียบร้อย!');
+          alert('ส่งคำสั่งซื้อเรียบร้อย!');
         }
 
-        // 4. ล้างตะกร้า ปิดแอป
         setCart([]);
         setShowCart(false);
-        if (liff.isInClient()) {
-          liff.closeWindow(); 
-        } else {
-          navigate('/history');
-        }
+        liff.isInClient() ? liff.closeWindow() : navigate('/history');
 
       } else {
         throw new Error(data.error || 'สถานะไม่สำเร็จ');
       }
-
     } catch (error: any) {
-      console.error("Order Submit Error:", error);
-      alert(`ไม่สามารถบันทึกข้อมูลได้: ${error.message}`);
+      alert(`ไม่สามารถส่งคำสั่งซื้อได้: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
