@@ -112,15 +112,15 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             {/* เช็คว่ามีข้อมูลไหม ถ้ามีถึงจะแสดงผล */}
             {variant.size && (
-              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
+              <p className="text-xl text-gray-500">ขนาด: <span className="text-xl text-gray-900 font-bold">{variant.size}</span></p>
             )}
             
             {variant.thickness && (
-              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>
+              <p className="text-xl text-gray-500">หนา: <span className="text-xl text-gray-900 font-bold">{variant.thickness}</span></p>
             )}
             
             {variant.weight && (
-              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>
+              <p className="text-xl text-gray-500">น้ำหนัก: <span className="text-xl text-gray-900 font-bold">{variant.weight}</span></p>
             )}
           </div>
         </div>

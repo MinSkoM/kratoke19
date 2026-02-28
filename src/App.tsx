@@ -12,7 +12,7 @@ import History from './components/History';
 import CartSummary from './components/CartSummary';
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyEF1msRoS-tMlV0zJJCIPsJi2onO44afnxF_lZvvlvM-nk8B2HgiT-7a4_ng0rdSvN/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbznBUOjg_u2NfDJ_ZiHKw3usLLELaz9SYqLyo3Svp50JHVnrZEZ0D4NKHhq-piNX17c/exec'; 
 
 // 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่
 const getCategoryColor = (category: string = 'ทั่วไป') => {
