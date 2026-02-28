@@ -14,6 +14,27 @@ import CartSummary from './components/CartSummary';
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
 
+// 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่ (ไม่ต้องตั้งค่าเอง หมวดเดียวกันจะได้สีเดียวกัน)
+const getCategoryColor = (category: string = 'ทั่วไป') => {
+  const themes = [
+    { card: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { card: 'border-l-green-500', badge: 'bg-green-50 text-green-700 border-green-200' },
+    { card: 'border-l-orange-500', badge: 'bg-orange-50 text-orange-700 border-orange-200' },
+    { card: 'border-l-purple-500', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
+    { card: 'border-l-pink-500', badge: 'bg-pink-50 text-pink-700 border-pink-200' },
+    { card: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700 border-teal-200' },
+    { card: 'border-l-red-500', badge: 'bg-red-50 text-red-700 border-red-200' },
+    { card: 'border-l-indigo-500', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % themes.length;
+  return themes[index];
+};
+
 const AppContent: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -233,7 +254,6 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
-  // 🟢 กรองสินค้า
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -295,38 +315,59 @@ const AppContent: FC = () => {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={
               searchTerm ? (
-                // 🟢 โหมดค้นหา: แสดงผลลัพธ์แบบลิสต์เรียงกัน พร้อมโชว์หมวดหมู่
-                <div className="space-y-3 animate-in fade-in duration-300">
+                <div className="space-y-4 animate-in fade-in duration-300">
                   <p className="text-xs font-semibold text-gray-500 mb-2">
-                    พบ {filteredProducts.length} รายการ
+                    พบ {filteredProducts.length} รายการ จากการค้นหา "{searchTerm}"
                   </p>
+                  
                   {filteredProducts.length > 0 ? (
-                    filteredProducts.map(product => (
-                      <div key={product.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-                        <div className="flex-1">
-                          {/* ป้ายบอกหมวดหมู่ */}
-                          <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full mb-1 border border-blue-100">
-                            หมวด: {product.category || 'ทั่วไป'}
-                          </span>
-                          <h3 className="text-sm font-bold text-gray-800 leading-tight">{product.name}</h3>
-                          <p className="text-sm font-semibold text-red-600 mt-1">฿{product.price}</p>
+                    filteredProducts.map(product => {
+                      // 🟢 เรียกใช้ฟังก์ชันสุ่มสีตามหมวดหมู่
+                      const theme = getCategoryColor(product.category);
+
+                      return (
+                        // 🟢 เพิ่มแถบสีด้านซ้ายของกล่อง (border-l-4) ให้ตรงกับสีหมวดหมู่
+                        <div key={product.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col border-l-4 ${theme.card}`}>
+                          
+                          <div className="p-4 flex flex-col gap-2">
+                            <div>
+                              {/* 🟢 นำสีที่ได้มาใส่ในป้ายบอกหมวดหมู่ */}
+                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1.5 border ${theme.badge}`}>
+                                หมวด: {product.category || 'ทั่วไป'}
+                              </span>
+                              
+                              <h3 className="text-base font-bold text-gray-800 leading-tight">{product.name}</h3>
+                              
+                              {product.size && (
+                                <p className="text-sm text-gray-500 mt-1">ขนาด/สเปค: {product.size}</p>
+                              )}
+                              
+                              {(product as any).description && (
+                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{(product as any).description}</p>
+                              )}
+                            </div>
+                            
+                            <div className="flex justify-between items-end mt-2 pt-2 border-t border-gray-50">
+                              <p className="text-lg font-bold text-red-600">฿{product.price}</p>
+                              <button 
+                                onClick={() => addToCart(product)}
+                                className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"
+                              >
+                                + ใส่ตะกร้า
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <button 
-                          onClick={() => addToCart(product)}
-                          className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm"
-                        >
-                          + ใส่ตะกร้า
-                        </button>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <div className="text-center py-10 bg-white rounded-xl border border-gray-100 shadow-sm">
-                      <p className="text-gray-500 text-sm">ไม่พบสินค้า "{searchTerm}"</p>
+                    <div className="text-center py-12 bg-white rounded-xl border border-gray-100 shadow-sm">
+                      <Search size={32} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-gray-500 text-sm">ไม่พบสินค้าที่คุณค้นหา</p>
                     </div>
                   )}
                 </div>
               ) : (
-                // 🔴 โหมดปกติ (ไม่ได้พิมพ์ค้นหา): โชว์หน้า Menu.tsx แบบเดิมที่แยกหมวดหมู่
                 <Menu products={products} isLoading={isLoading} addToCart={addToCart} />
               )
             } />
