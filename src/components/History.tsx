@@ -17,7 +17,8 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => {
             <p className="font-semibold text-sm">รหัส: {order.orderId}</p>
             <p className={`px-2 py-1 text-xs rounded-full ${
               order.status === 'รอคอนเฟิร์ม' ? 'bg-yellow-100 text-yellow-800' : 
-              order.status === 'สำเร็จ' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+              order.status === 'ชำระเงินแล้ว' ? 'bg-blue-100 text-blue-800' : 
+              order.status === 'รับสินค้าเรียบร้อย' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                 {order.status}
             </p>
           </div>

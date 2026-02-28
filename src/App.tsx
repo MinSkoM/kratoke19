@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
-import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, Hash } from 'lucide-react';
+import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, AlertCircle } from 'lucide-react';
 
 import Menu from './components/Menu';
 import Register from './components/Register';
@@ -12,7 +12,7 @@ import History from './components/History';
 import CartSummary from './components/CartSummary';
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyEF1msRoS-tMlV0zJJCIPsJi2onO44afnxF_lZvvlvM-nk8B2HgiT-7a4_ng0rdSvN/exec'; 
 
 // 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่
 const getCategoryColor = (category: string = 'ทั่วไป') => {
@@ -24,7 +24,16 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
     { card: 'border-l-pink-500', badge: 'bg-pink-50 text-pink-700 border-pink-200' },
     { card: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700 border-teal-200' },
     { card: 'border-l-red-500', badge: 'bg-red-50 text-red-700 border-red-200' },
-    { card: 'border-l-indigo-500', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+    { card: 'border-l-indigo-500', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    // 🟢 สีที่เพิ่มใหม่ 8 สีด้านล่างนี้
+    { card: 'border-l-cyan-500', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+    { card: 'border-l-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { card: 'border-l-violet-500', badge: 'bg-violet-50 text-violet-700 border-violet-200' },
+    { card: 'border-l-fuchsia-500', badge: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
+    { card: 'border-l-rose-500', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
+    { card: 'border-l-amber-500', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { card: 'border-l-yellow-500', badge: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    { card: 'border-l-lime-500', badge: 'bg-lime-50 text-lime-700 border-lime-200' }
   ];
   
   let hash = 0;
@@ -136,6 +145,10 @@ const AppContent: FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  
+  // 🟢 State สำหรับควบคุมการแสดง Overlay แจ้งเตือนให้ไปลงทะเบียน
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
+  
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -231,6 +244,12 @@ const AppContent: FC = () => {
   };
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    // 🟢 ดักตรวจสอบการลงทะเบียนก่อนเพิ่มลงตะกร้า
+    if (!isRegistered) {
+      setShowRegisterPrompt(true);
+      return; // หยุดการทำงาน ไม่เพิ่มของลงตะกร้า
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       return existing 
@@ -239,7 +258,6 @@ const AppContent: FC = () => {
     });
   };
 
-  // 🟢 ฟังก์ชันสำหรับอัปเดตจำนวนสินค้า (เพิ่ม/ลด/ลบ)
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => 
       prev.map((item) => {
@@ -282,7 +300,6 @@ const AppContent: FC = () => {
       if (data.status === 'success') {
         if (liff.isInClient()) {
           try {
-            // 🟢 แก้ไขการสร้างข้อความ Flex Message ไม่ให้มีวงเล็บเปล่าๆ
             const itemBoxes = cart.map(item => {
               const specs = [item.size, (item as any).thickness].filter(Boolean);
               const specText = specs.length > 0 ? ` [${specs.join(', ')}]` : '';
@@ -357,22 +374,16 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
-  // ค้นหาสินค้า
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     product.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 🟢 จัดกลุ่มสินค้าที่ค้นหาเจอตาม "หมวดหมู่+ชื่อ"
   const groupedFilteredProducts = useMemo(() => {
     const groups = filteredProducts.reduce((acc, product) => {
       const key = `${product.category}|${product.name}`;
       if (!acc[key]) {
-        acc[key] = {
-          name: product.name,
-          category: product.category,
-          variants: []
-        };
+        acc[key] = { name: product.name, category: product.category, variants: [] };
       }
       acc[key].variants.push(product);
       return acc;
@@ -387,6 +398,44 @@ const AppContent: FC = () => {
         <div className="fixed inset-0 bg-white/80 z-[60] flex flex-col items-center justify-center backdrop-blur-sm">
            <Loader2 className="animate-spin text-blue-600 mb-2" size={48} />
            <p className="text-gray-800 font-bold">กำลังโหลดข้อมูล...</p>
+        </div>
+      )}
+
+      {/* 🟢 Overlay แจ้งเตือนให้ไปลงทะเบียน */}
+      {showRegisterPrompt && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
+          onClick={() => setShowRegisterPrompt(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">ลงทะเบียนก่อนสั่งซื้อ</h3>
+            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+              คุณยังไม่ได้กรอกข้อมูลสำหรับจัดส่งสินค้า กรุณาลงทะเบียนข้อมูลในหน้าข้อมูลฉันก่อนหยิบสินค้าลงตะกร้านะครับ
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowRegisterPrompt(false)} 
+                className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                onClick={() => {
+                  setShowRegisterPrompt(false);
+                  navigate('/register');
+                }} 
+                className="flex-1 py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95"
+              >
+                ไปลงทะเบียน
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -438,7 +487,6 @@ const AppContent: FC = () => {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={
               searchTerm ? (
-                // 🟢 โหมดค้นหา: เรียกใช้ GroupedSearchProductCard ที่จัดกลุ่มแล้ว
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
                     พบ {filteredProducts.length} รายการ ({groupedFilteredProducts.length} กลุ่มสินค้า)
@@ -460,7 +508,6 @@ const AppContent: FC = () => {
                   )}
                 </div>
               ) : (
-                // 🔴 โหมดปกติ: โชว์หน้า Menu.tsx แบบแยกหมวดหมู่ตามปกติ
                 <Menu products={products} isLoading={isLoading} addToCart={addToCart} />
               )
             } />
@@ -476,7 +523,7 @@ const AppContent: FC = () => {
           setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
           isRegistered={isRegistered} handleCheckout={handleCheckout} 
           userAddress={memberInfo?.address}
-          updateQuantity={updateQuantity} // 🟢 ส่งฟังก์ชันนี้ให้หน้าตะกร้าทำงานได้
+          updateQuantity={updateQuantity}
         />
       )}
 
