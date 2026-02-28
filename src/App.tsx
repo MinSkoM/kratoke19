@@ -4,18 +4,15 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
-import { ShoppingCart, User, History as HistoryIcon, Loader2 } from 'lucide-react';
+import { ShoppingCart, User, History as HistoryIcon, Loader2, Search } from 'lucide-react'; // 🟢 เพิ่มไอคอน Search
 
-import Menu from './components/Menu.tsx';
+import Menu from './components/Menu';
 import Register from './components/Register';
 import History from './components/History';
 import CartSummary from './components/CartSummary';
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
-const ADMIN_LINE_IDS = [
-  'U337d46fa56d556e946413c3650552d19', // เปลี่ยนเป็น ID ของคุณ
-];
 
 const AppContent: FC = () => {
   const navigate = useNavigate();
@@ -26,9 +23,7 @@ const AppContent: FC = () => {
   const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const isAdmin = ADMIN_LINE_IDS.includes(userProfile?.userId || '');
   
-  // เพิ่ม State นี้เพื่อป้องกัน React Router ตีกับ LIFF
   const [isLiffReady, setIsLiffReady] = useState(false); 
   const [isLoading, setIsLoading] = useState(true);
   
@@ -36,6 +31,9 @@ const AppContent: FC = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
+
+  // 🟢 เพิ่ม State สำหรับเก็บข้อความค้นหาสินค้า
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (isInitialized.current) return;
@@ -47,7 +45,7 @@ const AppContent: FC = () => {
 
         if (!liff.isLoggedIn()) {
           liff.login();
-          return; // หยุดการทำงานตรงนี้ ปล่อยให้ระบบเด้งไปล็อกอิน
+          return;
         }
 
         const profile = await liff.getProfile();
@@ -57,7 +55,6 @@ const AppContent: FC = () => {
           pictureUrl: profile.pictureUrl || '' 
         });
 
-        // ⭐ LIFF อ่านค่าเสร็จแล้ว อนุญาตให้ React Router ทำงานได้!
         setIsLiffReady(true); 
 
         try {
@@ -82,7 +79,7 @@ const AppContent: FC = () => {
 
       } catch (error) {
         console.error('LIFF Init Failed', error);
-        setIsLiffReady(true); // เผื่อกรณีเปิดในคอมแล้วพัง ก็ยังให้เว็บโชว์ได้
+        setIsLiffReady(true); 
       } finally {
         setIsLoading(false); 
       }
@@ -166,70 +163,69 @@ const AppContent: FC = () => {
       const data = JSON.parse(responseText);
 
       if (data.status === 'success') {
-        
-        const itemBoxes = cart.map(item => ({
-          type: "box", layout: "horizontal",
-          contents: [
-            { type: "text", text: `${item.name} (${item.size}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
-            { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
-          ]
-        }));
-
-        // Flex Message ใบเสร็จ
-        const flexMessage: any = {
-          type: "flex", altText: `บิลสั่งซื้อ ${data.orderId}`,
-          contents: {
-            type: "bubble",
-            body: {
-              type: "box", layout: "vertical",
-              contents: [
-                { type: "text", text: isAdmin ? "INVOICE (รอชำระเงิน)" : "RECEIPT", weight: "bold", color: isAdmin ? "#0066FF" : "#1DB446", size: "sm" },
-                { type: "text", text: "สรุปรายการสั่งซื้อ", weight: "bold", size: "xl", margin: "md" },
-                { type: "text", text: `รหัส: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
-                { type: "separator", margin: "xxl" },
-                { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: itemBoxes },
-                { type: "separator", margin: "xxl" },
-                {
-                  type: "box", layout: "horizontal", margin: "md",
-                  contents: [
-                    { type: "text", text: "ยอดรวมทั้งสิ้น", size: "sm", color: "#555555" },
-                    { type: "text", text: `฿${cartTotal}`, size: "lg", color: "#ff0000", align: "end", weight: "bold" }
-                  ]
-                }
-              ]
-            }
-          }
-        };
-
         if (liff.isInClient()) {
           try {
-            if (isAdmin) {
-              // 🟢 โหมดแอดมิน: เปิดหน้าต่างให้เลือกส่งหาลูกค้า
-              if (liff.isApiAvailable('shareTargetPicker')) {
-                const shareRes = await liff.shareTargetPicker([flexMessage]);
-                if (shareRes) alert('ส่งบิลให้ลูกค้าเรียบร้อยแล้ว!');
+            const itemBoxes = cart.map(item => ({
+              type: "box", layout: "horizontal",
+              contents: [
+                { type: "text", text: `${item.name} (${item.size}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
+                { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
+              ]
+            }));
+
+            const flexMessage: any = {
+              type: "flex", altText: `บิลสั่งซื้อ ${data.orderId}`,
+              contents: {
+                type: "bubble",
+                body: {
+                  type: "box", layout: "vertical",
+                  contents: [
+                    { type: "text", text: "RECEIPT", weight: "bold", color: "#1DB446", size: "sm" },
+                    { type: "text", text: "รายการสั่งซื้อ", weight: "bold", size: "xl", margin: "md" },
+                    { type: "text", text: `รหัส: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: itemBoxes },
+                    { type: "separator", margin: "xxl" },
+                    {
+                      type: "box", layout: "horizontal", margin: "md",
+                      contents: [
+                        { type: "text", text: "วิธีจัดส่ง", size: "sm", color: "#555555" },
+                        { type: "text", text: deliveryMethod, size: "sm", color: "#111111", align: "end" }
+                      ]
+                    },
+                    {
+                      type: "box", layout: "horizontal", margin: "md",
+                      contents: [
+                        { type: "text", text: "ยอดรวมทั้งสิ้น", size: "sm", color: "#555555" },
+                        { type: "text", text: `฿${cartTotal}`, size: "lg", color: "#ff0000", align: "end", weight: "bold" }
+                      ]
+                    }
+                  ]
+                }
               }
-            } else {
-              // 🟢 โหมดลูกค้าปกติ: ส่งเข้าห้องแชทของร้าน
-              await liff.sendMessages([flexMessage]);
-              alert('ส่งคำสั่งซื้อเรียบร้อย!');
-            }
+            };
+            await liff.sendMessages([flexMessage]);
           } catch (msgError: any) {
-            console.error('Message Error:', msgError);
-            alert(`⚠️ สั่งซื้อสำเร็จแต่ข้อความไม่เด้ง: ${msgError.message}`);
+            console.error('Send message error:', msgError);
+            alert(`⚠️ ออเดอร์เข้าแล้ว แต่ข้อความไม่เด้งเพราะ: ${msgError.message}`);
           }
-        } else {
-          alert('ส่งคำสั่งซื้อเรียบร้อย!');
         }
 
+        alert('ส่งคำสั่งซื้อเรียบร้อย!');
         setCart([]);
         setShowCart(false);
-        liff.isInClient() ? liff.closeWindow() : navigate('/history');
+        setSearchTerm(''); // เคลียร์ช่องค้นหาหลังสั่งเสร็จ
 
+        if (liff.isInClient()) {
+          liff.closeWindow(); 
+        } else {
+          navigate('/history');
+        }
       } else {
         throw new Error(data.error || 'สถานะไม่สำเร็จ');
       }
     } catch (error: any) {
+      console.error("Order Submit Error:", error);
       alert(`ไม่สามารถส่งคำสั่งซื้อได้: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -237,6 +233,11 @@ const AppContent: FC = () => {
   };
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
+
+  // 🟢 กรองสินค้าจากคำที่ค้นหา ก่อนส่งไปให้หน้า Menu โชว์
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="font-sans bg-gray-50 min-h-screen pb-20 overflow-x-hidden">
@@ -274,11 +275,28 @@ const AppContent: FC = () => {
       </header>
 
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
-        {/* ⭐ ซ่อน Routes ไว้จนกว่า LIFF จะทำงานเสร็จ ป้องกันการ Redirect ตัดหน้า */}
+        
+        {/* 🟢 แสดงช่องค้นหาเฉพาะหน้า Menu เท่านั้น */}
+        {isLiffReady && location.pathname === '/menu' && (
+          <div className="mb-4 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="ค้นหาสินค้าที่ต้องการ..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
+
         {isLiffReady && (
           <Routes>
             <Route path="/" element={<Navigate to="/menu" replace />} />
-            <Route path="/menu" element={<Menu products={products} isLoading={isLoading} addToCart={addToCart} />} />
+            {/* 🟢 เปลี่ยนจากการส่ง products เป็น filteredProducts */}
+            <Route path="/menu" element={<Menu products={filteredProducts} isLoading={isLoading} addToCart={addToCart} />} />
             <Route path="/register" element={<Register onRegister={handleRegister} isRegistered={isRegistered} initialData={memberInfo} />} />
             <Route path="/history" element={<History orders={orders} isLoading={isLoading} />} />
           </Routes>
@@ -293,7 +311,6 @@ const AppContent: FC = () => {
         />
       )}
 
-      {/* ⭐ ซ่อน Footer ไว้ก่อนด้วยเหมือนกันเพื่อความสวยงามและกันคนกดก่อนโหลดเสร็จ */}
       {isLiffReady && (
         <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
