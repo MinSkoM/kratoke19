@@ -239,6 +239,18 @@ const AppContent: FC = () => {
     });
   };
 
+  // 🟢 ฟังก์ชันสำหรับอัปเดตจำนวนสินค้า (เพิ่ม/ลด/ลบ)
+  const updateQuantity = (id: string, delta: number) => {
+    setCart((prev) => 
+      prev.map((item) => {
+        if (item.id === id) {
+          return { ...item, quantity: item.quantity + delta };
+        }
+        return item;
+      }).filter((item) => item.quantity > 0)
+    );
+  };
+
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -270,13 +282,19 @@ const AppContent: FC = () => {
       if (data.status === 'success') {
         if (liff.isInClient()) {
           try {
-            const itemBoxes = cart.map(item => ({
-              type: "box", layout: "horizontal",
-              contents: [
-                { type: "text", text: `${item.name} (${item.size || ''}) x${item.quantity}`, size: "sm", color: "#555555", flex: 1 },
-                { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
-              ]
-            }));
+            // 🟢 แก้ไขการสร้างข้อความ Flex Message ไม่ให้มีวงเล็บเปล่าๆ
+            const itemBoxes = cart.map(item => {
+              const specs = [item.size, (item as any).thickness].filter(Boolean);
+              const specText = specs.length > 0 ? ` [${specs.join(', ')}]` : '';
+              
+              return {
+                type: "box", layout: "horizontal",
+                contents: [
+                  { type: "text", text: `${item.name}${specText} x${item.quantity}`, size: "sm", color: "#555555", flex: 1, wrap: true },
+                  { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
+                ]
+              };
+            });
 
             const flexMessage: any = {
               type: "flex", altText: `บิลสั่งซื้อ ${data.orderId}`,
@@ -457,7 +475,8 @@ const AppContent: FC = () => {
           cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod} 
           setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
           isRegistered={isRegistered} handleCheckout={handleCheckout} 
-          userAddress={memberInfo?.address} // 🟢 เพิ่มบรรทัดนี้เข้าไป
+          userAddress={memberInfo?.address}
+          updateQuantity={updateQuantity} // 🟢 ส่งฟังก์ชันนี้ให้หน้าตะกร้าทำงานได้
         />
       )}
 

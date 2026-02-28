@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { CartItem } from '../types';
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -10,11 +10,12 @@ interface CartSummaryProps {
   setShowCart: (show: boolean) => void;
   isRegistered: boolean;
   handleCheckout: () => void;
-  userAddress?: string; // 🟢 เพิ่ม Prop สำหรับรับที่อยู่
+  userAddress?: string;
+  updateQuantity: (id: string, delta: number) => void; // 🟢 เพิ่ม Prop สำหรับอัปเดตจำนวน
 }
 
 const CartSummary: FC<CartSummaryProps> = ({
-  cart, cartTotal, deliveryMethod, setDeliveryMethod, setShowCart, isRegistered, handleCheckout, userAddress
+  cart, cartTotal, deliveryMethod, setDeliveryMethod, setShowCart, isRegistered, handleCheckout, userAddress, updateQuantity
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50" onClick={() => setShowCart(false)}>
@@ -25,8 +26,8 @@ const CartSummary: FC<CartSummaryProps> = ({
         </div>
         <div className="space-y-3 max-h-60 overflow-y-auto pb-2">
           {cart.map(item => (
-            <div key={item.id} className="flex justify-between items-center border-b pb-2">
-              <div className="w-2/3">
+            <div key={item.id} className="flex justify-between items-center border-b pb-3">
+              <div className="w-3/5 pr-2">
                 <p className="font-semibold text-sm truncate">
                   {item.name} 
                   {(item.size || (item as any).thickness) && (
@@ -37,9 +38,26 @@ const CartSummary: FC<CartSummaryProps> = ({
                 </p>
                 <p className="text-xs text-gray-500">{item.price} บาท/ชิ้น</p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm">x{item.quantity}</span>
-                <p className="font-semibold text-sm w-16 text-right">{item.price * item.quantity} ฿</p>
+              
+              {/* 🟢 ส่วนปุ่ม เพิ่ม/ลด/ลบ สินค้า */}
+              <div className="flex flex-col items-end gap-2 w-2/5">
+                <p className="font-bold text-sm text-blue-600">{item.price * item.quantity} ฿</p>
+                
+                <div className="flex items-center border rounded-lg bg-gray-50 shadow-sm">
+                  <button 
+                    onClick={() => updateQuantity(item.id, -1)} 
+                    className="p-1.5 text-gray-500 hover:text-red-500 active:bg-gray-200 rounded-l-lg transition-colors"
+                  >
+                    {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} />}
+                  </button>
+                  <span className="w-6 text-center text-xs font-bold text-gray-700">{item.quantity}</span>
+                  <button 
+                    onClick={() => updateQuantity(item.id, 1)} 
+                    className="p-1.5 text-gray-500 hover:text-blue-600 active:bg-gray-200 rounded-r-lg transition-colors"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -54,7 +72,6 @@ const CartSummary: FC<CartSummaryProps> = ({
               <button onClick={() => setDeliveryMethod('จัดส่ง')} className={`flex-1 p-2 text-sm rounded-lg border ${deliveryMethod === 'จัดส่ง' ? 'bg-blue-500 text-white border-blue-500 font-bold' : 'text-gray-600'}`}>จัดส่ง</button>
             </div>
 
-            {/* 🟢 แสดงที่อยู่เมื่อเลือก "จัดส่ง" */}
             {deliveryMethod === 'จัดส่ง' && (
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4 flex items-start gap-2">
                 <MapPin size={16} className="text-blue-500 mt-0.5 shrink-0" />
