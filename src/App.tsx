@@ -14,7 +14,7 @@ import CartSummary from './components/CartSummary';
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-9jqz_1O0u_dxFcYuJ8nLwAJ2t82A3rcOykX1JXPCMboXBWLLj_G_BOSZwfgWUDBW/exec'; 
 
-// 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่ (ไม่ต้องตั้งค่าเอง หมวดเดียวกันจะได้สีเดียวกัน)
+// 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่
 const getCategoryColor = (category: string = 'ทั่วไป') => {
   const themes = [
     { card: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -254,6 +254,7 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
+  // กรองสินค้าตามคำค้นหา
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -315,6 +316,7 @@ const AppContent: FC = () => {
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={
               searchTerm ? (
+                // 🟢 โหมดค้นหา: แสดงผลลัพธ์พร้อมระบบสีแยกตามหมวดหมู่
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <p className="text-xs font-semibold text-gray-500 mb-2">
                     พบ {filteredProducts.length} รายการ จากการค้นหา "{searchTerm}"
@@ -322,16 +324,22 @@ const AppContent: FC = () => {
                   
                   {filteredProducts.length > 0 ? (
                     filteredProducts.map(product => {
-                      // 🟢 เรียกใช้ฟังก์ชันสุ่มสีตามหมวดหมู่
+                      // ดึง Theme สีตามหมวดหมู่ของสินค้านั้นๆ
                       const theme = getCategoryColor(product.category);
 
                       return (
-                        // 🟢 เพิ่มแถบสีด้านซ้ายของกล่อง (border-l-4) ให้ตรงกับสีหมวดหมู่
                         <div key={product.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col border-l-4 ${theme.card}`}>
                           
+                          {/* เปิดใช้งานส่วนนี้ได้ ถ้าระบบคุณมีคอลัมน์รูปภาพ */}
+                          {/* {(product as any).image && (
+                            <div className="w-full h-40 bg-gray-100">
+                              <img src={(product as any).image} alt={product.name} className="w-full h-full object-cover" />
+                            </div>
+                          )} */}
+
                           <div className="p-4 flex flex-col gap-2">
                             <div>
-                              {/* 🟢 นำสีที่ได้มาใส่ในป้ายบอกหมวดหมู่ */}
+                              {/* ป้ายบอกหมวดหมู่ พร้อมสีที่เปลี่ยนไปตามหมวด */}
                               <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1.5 border ${theme.badge}`}>
                                 หมวด: {product.category || 'ทั่วไป'}
                               </span>
@@ -368,6 +376,7 @@ const AppContent: FC = () => {
                   )}
                 </div>
               ) : (
+                // 🔴 โหมดปกติ: โชว์หน้า Menu.tsx แบบแยกหมวดหมู่ตามปกติ
                 <Menu products={products} isLoading={isLoading} addToCart={addToCart} />
               )
             } />
