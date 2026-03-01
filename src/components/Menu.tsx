@@ -64,16 +64,13 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         <div className="space-y-3">
           <h2 className="font-bold text-lg text-gray-500 px-1">{selectedCategory}</h2>
           {productNamesInCategory.map((name) => {
-            // ดึงสเปกทั้งหมดของสินค้านี้มาเช็ค
             const productVariants = products.filter(p => p.name === name && p.category === selectedCategory);
             const firstItem = productVariants[0];
 
-            // 🟢 เงื่อนไข: ถ้ามีแค่ 1 แบบ ให้แสดงแบบ "ไม่ต้องกดเข้าไป" (โชว์ปุ่มเพิ่มเลย)
             if (productVariants.length === 1) {
               return <SingleItemCard key={name} variant={firstItem} onAdd={addToCart} />;
             }
 
-            // 🟠 เงื่อนไข: ถ้ามีหลายแบบ ให้แสดงแบบให้กดเข้าไปดูสเปก (หน้า 3)
             return (
               <div key={name} onClick={() => setSelectedName(name)} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors">
                 {firstItem?.image && (
@@ -107,14 +104,14 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   );
 };
 
-// --- Component ใหม่: สำหรับสินค้าที่มีแบบเดียว (รวมหน้า 2 และ 3 ไว้ด้วยกัน) ---
+// --- Component: สำหรับสินค้าที่มีแบบเดียว ---
 const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState<number | string>(1);
 
   const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val === '') {
-      setQty(''); // ยอมให้ลบช่องว่างเพื่อพิมพ์เลขใหม่ได้
+      setQty('');
     } else {
       const num = parseInt(val, 10);
       if (!isNaN(num) && num > 0) setQty(num);
@@ -122,7 +119,7 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
   };
 
   const handleBlur = () => {
-    if (qty === '' || Number(qty) < 1) setQty(1); // ถ้าปล่อยว่างหรือเลขผิด ให้กลับเป็น 1
+    if (qty === '' || Number(qty) < 1) setQty(1); 
   };
 
   return (
@@ -133,8 +130,6 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
         )}
         <div className="flex-1">
           <div className="font-bold text-gray-800 text-base">{variant.name}</div>
-          
-          {/* แสดงรายละเอียดเสริมถ้าระบุไว้ */}
           <div className="text-xs text-gray-500 mt-1 space-x-2">
             {variant.size && <span>ขนาด: {variant.size}</span>}
             {variant.thickness && <span>หนา: {variant.thickness}</span>}
@@ -146,13 +141,13 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
         <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
         
         <div className="flex items-center gap-2">
-          {/* 🟢 ตัวเลือกจำนวนแบบพิมพ์ได้ */}
+          {/* 🟢 ตัวเลือกจำนวนแบบลด Padding */}
           <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
             <button 
               onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="p-1.5 text-gray-400 active:text-blue-600"
+              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
-              <Minus size={16} />
+              <Minus size={14} />
             </button>
             <input 
               type="number"
@@ -160,14 +155,14 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
               value={qty}
               onChange={handleQtyChange}
               onBlur={handleBlur}
-              className="w-8 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-              style={{ MozAppearance: 'textfield' }} // ลบลูกศรขึ้นลงแบบ default ของ browser
+              className="w-7 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+              style={{ MozAppearance: 'textfield' }} 
             />
             <button 
               onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="p-1.5 text-gray-400 active:text-blue-600"
+              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </button>
           </div>
 
@@ -186,7 +181,7 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
   );
 };
 
-// --- Component เดิม: สำหรับสินค้าที่มีหลายสเปก (หน้า 3) ---
+// --- Component: สำหรับสินค้าที่มีหลายสเปก ---
 const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState<number | string>(1);
 
@@ -226,13 +221,13 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
         <div className="text-l font-black text-blue-600">{variant.price}.-</div>
         
         <div className="flex items-center gap-3">
-          {/* 🟢 ตัวเลือกจำนวนแบบพิมพ์ได้ */}
-          <div className="flex items-center border rounded-xl bg-gray-50 overflow-hidden">
+          {/* 🟢 ตัวเลือกจำนวนแบบลด Padding */}
+          <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
             <button 
               onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="p-2 text-gray-400 active:text-blue-600"
+              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
-              <Minus size={16} />
+              <Minus size={14} />
             </button>
             <input 
               type="number"
@@ -240,14 +235,14 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
               value={qty}
               onChange={handleQtyChange}
               onBlur={handleBlur}
-              className="w-10 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-7 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
               style={{ MozAppearance: 'textfield' }}
             />
             <button 
               onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="p-2 text-gray-400 active:text-blue-600"
+              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </button>
           </div>
 
