@@ -25,7 +25,6 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
     { card: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700 border-teal-200' },
     { card: 'border-l-red-500', badge: 'bg-red-50 text-red-700 border-red-200' },
     { card: 'border-l-indigo-500', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-    // 🟢 สีที่เพิ่มใหม่ 8 สีด้านล่างนี้
     { card: 'border-l-cyan-500', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
     { card: 'border-l-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     { card: 'border-l-violet-500', badge: 'bg-violet-50 text-violet-700 border-violet-200' },
@@ -44,7 +43,7 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
   return themes[index];
 };
 
-// 🟢 Component รายการสินค้าย่อย (แสดงสเปกและปุ่มหยิบลงตะกร้า)
+// 🟢 Component รายการสินค้าย่อย (กรณีมีหลายสเปก)
 const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState(1);
 
@@ -52,7 +51,6 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
             {variant.size && (
               <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
@@ -69,9 +67,7 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
 
       <div className="flex items-center justify-between border-t border-gray-200 border-dashed pt-3">
         <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
-        
         <div className="flex items-center gap-2">
-          {/* ตัวเลือกจำนวน */}
           <div className="flex items-center border rounded-lg bg-white">
             <button onClick={() => setQty(q => Math.max(1, q - 1))} className="p-1.5 text-gray-400 active:text-blue-600">
               <Minus size={14} />
@@ -81,12 +77,8 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
               <Plus size={14} />
             </button>
           </div>
-
           <button
-            onClick={() => {
-              onAdd(variant, qty);
-              setQty(1);
-            }}
+            onClick={() => { onAdd(variant, qty); setQty(1); }}
             className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
             เพิ่ม
@@ -97,15 +89,74 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
   );
 };
 
-// 🟢 Component กล่องหลัก (จัดกลุ่มตามชื่อสินค้า)
-const GroupedSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
-  const theme = getCategoryColor(group.category);
-  // ดึงรูปภาพจากสินค้ารายการแรกที่มีรูป
-  const firstImage = group.variants.find((v: any) => v.image)?.image as string | undefined;
+// 🟢 Component สำหรับสินค้าที่มีแค่ 1 รายการย่อย (โชว์แบบหน้าเดียวจบ ไม่ต้องซ้อนลึก)
+const SingleSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void; theme: any }> = ({ group, onAdd, theme }) => {
+  const [qty, setQty] = useState(1);
+  const variant = group.variants[0]; // ดึงตัวเดียวมาใช้เลย
 
   return (
+    <div className={`bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-l-4 ${theme.card}`}>
+      <div className="flex gap-4 items-start">
+        {variant.image && (
+          <img src={variant.image} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={group.name} />
+        )}
+        <div className="flex-1">
+          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
+            หมวด: {group.category || 'ทั่วไป'}
+          </span>
+          <h3 className="text-base font-bold text-gray-800 leading-tight mb-2">{group.name}</h3>
+          
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+            {variant.size && (
+              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
+            )}
+            {(variant as any).thickness && (
+              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(variant as any).thickness}</span></p>
+            )}
+            {(variant as any).weight && (
+              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(variant as any).weight}</span></p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-3">
+        <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border rounded-lg bg-gray-50">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="p-1.5 text-gray-400 active:text-blue-600">
+              <Minus size={14} />
+            </button>
+            <span className="w-5 text-center font-bold text-gray-700 text-sm">{qty}</span>
+            <button onClick={() => setQty(q => q + 1)} className="p-1.5 text-gray-400 active:text-blue-600">
+              <Plus size={14} />
+            </button>
+          </div>
+          <button
+            onClick={() => { onAdd(variant, qty); setQty(1); }}
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
+          >
+            เพิ่ม
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 🟢 Component กล่องหลัก (เลือกแสดงตามจำนวนสินค้าย่อย)
+const GroupedSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
+  const theme = getCategoryColor(group.category);
+
+  // 🟠 ถ้ามีสินค้าเดียว ให้แสดงแบบ Flat ราบเรียบ
+  if (group.variants.length === 1) {
+    return <SingleSearchProductCard group={group} onAdd={onAdd} theme={theme} />;
+  }
+
+  // 🔵 ถ้ามีหลายสเปก ให้แสดงแบบจัดกลุ่ม
+  const firstImage = group.variants.find((v: any) => v.image)?.image as string | undefined;
+  return (
     <div className={`bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm border-l-4 ${theme.card}`}>
-      {/* ส่วนหัว: รูปภาพ หมวดหมู่ และ ชื่อสินค้า */}
       <div className="flex gap-4 items-start mb-4">
         {firstImage && (
           <img src={firstImage} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={group.name} />
@@ -117,8 +168,6 @@ const GroupedSearchProductCard: FC<{ group: { name: string, category: string, va
           <h3 className="text-base font-bold text-gray-800 leading-tight">{group.name}</h3>
         </div>
       </div>
-
-      {/* ส่วนรายละเอียดสินค้าย่อย */}
       <div className="space-y-3">
         {group.variants.map((variant) => (
           <SearchVariantItem key={variant.id} variant={variant} onAdd={onAdd} />
@@ -146,11 +195,8 @@ const AppContent: FC = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCart, setShowCart] = useState(false);
   
-  // 🟢 State สำหรับควบคุมการแสดง Overlay แจ้งเตือนให้ไปลงทะเบียน
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
-  
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
-
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -244,10 +290,9 @@ const AppContent: FC = () => {
   };
 
   const addToCart = (product: Product, quantity: number = 1) => {
-    // 🟢 ดักตรวจสอบการลงทะเบียนก่อนเพิ่มลงตะกร้า
     if (!isRegistered) {
       setShowRegisterPrompt(true);
-      return; // หยุดการทำงาน ไม่เพิ่มของลงตะกร้า
+      return;
     }
 
     setCart((prev) => {
@@ -401,7 +446,6 @@ const AppContent: FC = () => {
         </div>
       )}
 
-      {/* 🟢 Overlay แจ้งเตือนให้ไปลงทะเบียน */}
       {showRegisterPrompt && (
         <div 
           className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
