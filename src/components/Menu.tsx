@@ -140,12 +140,11 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
       <div className="flex items-center justify-between border-t border-gray-50 pt-3">
         <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
         
-        <div className="flex items-center gap-2">
-          {/* 🟢 ตัวเลือกจำนวนแบบลด Padding */}
+        <div className="flex items-center gap-2"> {/* ลดช่องว่าง gap เหลือ 2 */}
           <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
             <button 
               onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
+              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
               <Minus size={14} />
             </button>
@@ -155,12 +154,12 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
               value={qty}
               onChange={handleQtyChange}
               onBlur={handleBlur}
-              className="w-7 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-6 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
               style={{ MozAppearance: 'textfield' }} 
             />
             <button 
               onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
+              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
               <Plus size={14} />
             </button>
@@ -171,7 +170,7 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
               onAdd(variant, Number(qty) || 1);
               setQty(1);
             }}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all whitespace-nowrap"
           >
             เพิ่ม
           </button>
@@ -218,14 +217,13 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
       </div>
 
       <div className="flex items-center justify-between border-t border-dashed pt-4">
-        <div className="text-l font-black text-blue-600">{variant.price}.-</div>
+        <div className="text-xl font-black text-blue-600">{variant.price}.-</div>
         
-        <div className="flex items-center gap-3">
-          {/* 🟢 ตัวเลือกจำนวนแบบลด Padding */}
+        <div className="flex items-center gap-2"> {/* ลดช่องว่าง gap เหลือ 2 */}
           <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
             <button 
               onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
+              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
               <Minus size={14} />
             </button>
@@ -235,12 +233,12 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
               value={qty}
               onChange={handleQtyChange}
               onBlur={handleBlur}
-              className="w-7 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-6 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
               style={{ MozAppearance: 'textfield' }}
             />
             <button 
               onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="px-2 py-1 text-gray-400 active:text-blue-600 hover:bg-gray-100 transition-colors"
+              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
             >
               <Plus size={14} />
             </button>
@@ -251,7 +249,7 @@ const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void
               onAdd(variant, Number(qty) || 1);
               setQty(1);
             }}
-            className="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all whitespace-nowrap"
           >
             เพิ่มลงตะกร้า
           </button>
