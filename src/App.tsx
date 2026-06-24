@@ -5,16 +5,16 @@ import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
 import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, AlertCircle } from 'lucide-react';
+import { getProductImage } from './utils/productImage';
 
 import Menu from './components/Menu';
 import Register from './components/Register';
 import History from './components/History';
 import CartSummary from './components/CartSummary';
 
-const LIFF_ID = import.meta.env.VITE_LIFF_ID || '2009263888-F1O3wTGT';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbznBUOjg_u2NfDJ_ZiHKw3usLLELaz9SYqLyo3Svp50JHVnrZEZ0D4NKHhq-piNX17c/exec'; 
+const LIFF_ID = import.meta.env.VITE_LIFF_ID as string;
+const GAS_URL = import.meta.env.VITE_GAS_URL as string;
 
-// 🟢 ฟังก์ชันสำหรับสุ่มสีอัตโนมัติตามชื่อหมวดหมู่
 const getCategoryColor = (category: string = 'ทั่วไป') => {
   const themes = [
     { card: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -32,54 +32,35 @@ const getCategoryColor = (category: string = 'ทั่วไป') => {
     { card: 'border-l-rose-500', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
     { card: 'border-l-amber-500', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
     { card: 'border-l-yellow-500', badge: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-    { card: 'border-l-lime-500', badge: 'bg-lime-50 text-lime-700 border-lime-200' }
+    { card: 'border-l-lime-500', badge: 'bg-lime-50 text-lime-700 border-lime-200' },
   ];
-  
   let hash = 0;
   for (let i = 0; i < category.length; i++) {
     hash = category.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const index = Math.abs(hash) % themes.length;
-  return themes[index];
+  return themes[Math.abs(hash) % themes.length];
 };
 
-// 🟢 Component รายการสินค้าย่อย (กรณีมีหลายสเปก)
 const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState(1);
-
   return (
-    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-            {variant.size && (
-              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
-            )}
-            {(variant as any).thickness && (
-              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(variant as any).thickness}</span></p>
-            )}
-            {(variant as any).weight && (
-              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(variant as any).weight}</span></p>
-            )}
-          </div>
-        </div>
+    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mb-3">
+        {variant.size && <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>}
+        {variant.thickness && <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>}
+        {variant.weight && <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>}
       </div>
-
       <div className="flex items-center justify-between border-t border-gray-200 border-dashed pt-3">
-        <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
+        <div className="text-xl font-black text-blue-600">{variant.price}.-</div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-lg bg-white">
-            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="p-1.5 text-gray-400 active:text-blue-600">
-              <Minus size={14} />
-            </button>
-            <span className="w-5 text-center font-bold text-gray-700 text-sm">{qty}</span>
-            <button onClick={() => setQty(q => q + 1)} className="p-1.5 text-gray-400 active:text-blue-600">
-              <Plus size={14} />
-            </button>
+          <div className="flex items-center border border-gray-200 rounded-xl bg-white">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-2.5 py-2 text-gray-400 active:text-blue-600"><Minus size={16} /></button>
+            <span className="w-8 text-center font-bold text-gray-700 text-base">{qty}</span>
+            <button onClick={() => setQty(q => q + 1)} className="px-2.5 py-2 text-gray-400 active:text-blue-600"><Plus size={16} /></button>
           </div>
           <button
             onClick={() => { onAdd(variant, qty); setQty(1); }}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-all"
           >
             เพิ่ม
           </button>
@@ -89,52 +70,42 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
   );
 };
 
-// 🟢 Component สำหรับสินค้าที่มีแค่ 1 รายการย่อย (โชว์แบบหน้าเดียวจบ ไม่ต้องซ้อนลึก)
-const SingleSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void; theme: any }> = ({ group, onAdd, theme }) => {
+const SingleSearchProductCard: FC<{ group: { name: string; category: string; variants: Product[] }; onAdd: (p: Product, q: number) => void; theme: ReturnType<typeof getCategoryColor> }> = ({ group, onAdd, theme }) => {
   const [qty, setQty] = useState(1);
-  const variant = group.variants[0]; // ดึงตัวเดียวมาใช้เลย
+  const variant = group.variants[0];
 
   return (
     <div className={`bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-l-4 ${theme.card}`}>
       <div className="flex gap-4 items-start">
-        {variant.image && (
-          <img src={variant.image} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={group.name} />
-        )}
+        <img
+          src={getProductImage(variant)}
+          className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm shrink-0"
+          alt={group.name}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
         <div className="flex-1">
-          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
-            หมวด: {group.category || 'ทั่วไป'}
+          <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-1 border ${theme.badge}`}>
+            {group.category || 'ทั่วไป'}
           </span>
-          <h3 className="text-base font-bold text-gray-800 leading-tight mb-2">{group.name}</h3>
-          
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-            {variant.size && (
-              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
-            )}
-            {(variant as any).thickness && (
-              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{(variant as any).thickness}</span></p>
-            )}
-            {(variant as any).weight && (
-              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{(variant as any).weight}</span></p>
-            )}
+          <h3 className="text-lg font-bold text-gray-800 leading-tight mb-2">{group.name}</h3>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+            {variant.size && <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>}
+            {variant.thickness && <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>}
+            {variant.weight && <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>}
           </div>
         </div>
       </div>
-
       <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-3">
-        <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
+        <div className="text-2xl font-black text-blue-600">{variant.price}.-</div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-lg bg-gray-50">
-            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="p-1.5 text-gray-400 active:text-blue-600">
-              <Minus size={14} />
-            </button>
-            <span className="w-5 text-center font-bold text-gray-700 text-sm">{qty}</span>
-            <button onClick={() => setQty(q => q + 1)} className="p-1.5 text-gray-400 active:text-blue-600">
-              <Plus size={14} />
-            </button>
+          <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-2.5 py-2 text-gray-400 active:text-blue-600"><Minus size={16} /></button>
+            <span className="w-8 text-center font-bold text-gray-700 text-base">{qty}</span>
+            <button onClick={() => setQty(q => q + 1)} className="px-2.5 py-2 text-gray-400 active:text-blue-600"><Plus size={16} /></button>
           </div>
           <button
             onClick={() => { onAdd(variant, qty); setQty(1); }}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all"
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-all"
           >
             เพิ่ม
           </button>
@@ -144,32 +115,29 @@ const SingleSearchProductCard: FC<{ group: { name: string, category: string, var
   );
 };
 
-// 🟢 Component กล่องหลัก (เลือกแสดงตามจำนวนสินค้าย่อย)
-const GroupedSearchProductCard: FC<{ group: { name: string, category: string, variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
+const GroupedSearchProductCard: FC<{ group: { name: string; category: string; variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
   const theme = getCategoryColor(group.category);
+  if (group.variants.length === 1) return <SingleSearchProductCard group={group} onAdd={onAdd} theme={theme} />;
 
-  // 🟠 ถ้ามีสินค้าเดียว ให้แสดงแบบ Flat ราบเรียบ
-  if (group.variants.length === 1) {
-    return <SingleSearchProductCard group={group} onAdd={onAdd} theme={theme} />;
-  }
-
-  // 🔵 ถ้ามีหลายสเปก ให้แสดงแบบจัดกลุ่ม
-  const firstImage = group.variants.find((v: any) => v.image)?.image as string | undefined;
+  const firstImage = getProductImage(group.variants[0]);
   return (
-    <div className={`bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm border-l-4 ${theme.card}`}>
+    <div className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${theme.card} border border-gray-100`}>
       <div className="flex gap-4 items-start mb-4">
-        {firstImage && (
-          <img src={firstImage} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={group.name} />
-        )}
+        <img
+          src={firstImage}
+          className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm shrink-0"
+          alt={group.name}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
         <div>
-          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 border ${theme.badge}`}>
-            หมวด: {group.category || 'ทั่วไป'}
+          <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-1 border ${theme.badge}`}>
+            {group.category || 'ทั่วไป'}
           </span>
-          <h3 className="text-base font-bold text-gray-800 leading-tight">{group.name}</h3>
+          <h3 className="text-lg font-bold text-gray-800 leading-tight">{group.name}</h3>
         </div>
       </div>
       <div className="space-y-3">
-        {group.variants.map((variant) => (
+        {group.variants.map(variant => (
           <SearchVariantItem key={variant.id} variant={variant} onAdd={onAdd} />
         ))}
       </div>
@@ -182,19 +150,19 @@ const AppContent: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isInitialized = useRef(false);
-  
+
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [memberInfo, setMemberInfo] = useState<{name: string, phone: string, address: string} | null>(null);
+  const [memberInfo, setMemberInfo] = useState<{ name: string; phone: string; address: string } | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  
-  const [isLiffReady, setIsLiffReady] = useState(false); 
+
+  const [isLiffReady, setIsLiffReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  
+
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
   const [searchTerm, setSearchTerm] = useState('');
@@ -213,20 +181,19 @@ const AppContent: FC = () => {
         }
 
         const profile = await liff.getProfile();
-        setUserProfile({ 
-          userId: profile.userId, 
-          displayName: profile.displayName, 
-          pictureUrl: profile.pictureUrl || '' 
+        setUserProfile({
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl || '',
         });
 
-        setIsLiffReady(true); 
+        setIsLiffReady(true);
 
         try {
           const [memberRes, prodRes] = await Promise.all([
             fetch(`${GAS_URL}?action=checkMember&lineId=${profile.userId}`),
-            fetch(`${GAS_URL}?action=getProducts`)
+            fetch(`${GAS_URL}?action=getProducts`),
           ]);
-
           const memberData = await memberRes.json();
           const prodData = await prodRes.json();
 
@@ -234,18 +201,15 @@ const AppContent: FC = () => {
             setIsRegistered(true);
             setMemberInfo(memberData.data);
           }
-          if (prodData.status === 'success') {
-            setProducts(prodData.data);
-          }
+          if (prodData.status === 'success') setProducts(prodData.data);
         } catch (apiError) {
-          console.error("GAS Fetch Error:", apiError);
+          console.error('GAS Fetch Error:', apiError);
         }
-
       } catch (error) {
         console.error('LIFF Init Failed', error);
-        setIsLiffReady(true); 
+        setIsLiffReady(true);
       } finally {
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     };
 
@@ -282,7 +246,7 @@ const AppContent: FC = () => {
         alert('บันทึกข้อมูลเรียบร้อย');
         navigate('/menu');
       }
-    } catch (err) {
+    } catch {
       alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsLoading(false);
@@ -294,23 +258,18 @@ const AppContent: FC = () => {
       setShowRegisterPrompt(true);
       return;
     }
-
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      return existing 
-        ? prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      return existing
+        ? prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
         : [...prev, { ...product, quantity }];
     });
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart((prev) => 
-      prev.map((item) => {
-        if (item.id === id) {
-          return { ...item, quantity: item.quantity + delta };
-        }
-        return item;
-      }).filter((item) => item.quantity > 0)
+    setCart(prev =>
+      prev.map(item => item.id === id ? { ...item, quantity: item.quantity + delta } : item)
+        .filter(item => item.quantity > 0)
     );
   };
 
@@ -333,61 +292,53 @@ const AppContent: FC = () => {
       const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ 
-          action: 'submitOrder', 
-          payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod } 
+        body: JSON.stringify({
+          action: 'submitOrder',
+          payload: { lineId: userProfile?.userId, cart, totalQuantity, totalPrice: cartTotal, shippingMethod: deliveryMethod },
         }),
       });
-      
-      const responseText = await res.text();
-      const data = JSON.parse(responseText);
+
+      const data = JSON.parse(await res.text());
 
       if (data.status === 'success') {
         if (liff.isInClient()) {
           try {
             const itemBoxes = cart.map(item => {
-              const specs = [item.size, (item as any).thickness].filter(Boolean);
+              const specs = [item.size, item.thickness].filter(Boolean);
               const specText = specs.length > 0 ? ` [${specs.join(', ')}]` : '';
-              
               return {
-                type: "box", layout: "horizontal",
+                type: 'box', layout: 'horizontal',
                 contents: [
-                  { type: "text", text: `${item.name}${specText} x${item.quantity}`, size: "sm", color: "#555555", flex: 1, wrap: true },
-                  { type: "text", text: `฿${item.price * item.quantity}`, size: "sm", color: "#111111", align: "end", flex: 0 }
-                ]
+                  { type: 'text', text: `${item.name}${specText} x${item.quantity}`, size: 'sm', color: '#555555', flex: 1, wrap: true },
+                  { type: 'text', text: `฿${item.price * item.quantity}`, size: 'sm', color: '#111111', align: 'end', flex: 0 },
+                ],
               };
             });
 
             const flexMessage: any = {
-              type: "flex", altText: `บิลสั่งซื้อ ${data.orderId}`,
+              type: 'flex', altText: `บิลสั่งซื้อ ${data.orderId}`,
               contents: {
-                type: "bubble",
+                type: 'bubble',
                 body: {
-                  type: "box", layout: "vertical",
+                  type: 'box', layout: 'vertical',
                   contents: [
-                    { type: "text", text: "RECEIPT", weight: "bold", color: "#1DB446", size: "sm" },
-                    { type: "text", text: "รายการสั่งซื้อ", weight: "bold", size: "xl", margin: "md" },
-                    { type: "text", text: `รหัส: ${data.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
-                    { type: "separator", margin: "xxl" },
-                    { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: itemBoxes },
-                    { type: "separator", margin: "xxl" },
-                    {
-                      type: "box", layout: "horizontal", margin: "md",
-                      contents: [
-                        { type: "text", text: "วิธีจัดส่ง", size: "sm", color: "#555555" },
-                        { type: "text", text: deliveryMethod, size: "sm", color: "#111111", align: "end" }
-                      ]
-                    },
-                    {
-                      type: "box", layout: "horizontal", margin: "md",
-                      contents: [
-                        { type: "text", text: "ยอดรวมทั้งสิ้น", size: "sm", color: "#555555" },
-                        { type: "text", text: `฿${cartTotal}`, size: "lg", color: "#ff0000", align: "end", weight: "bold" }
-                      ]
-                    }
-                  ]
-                }
-              }
+                    { type: 'text', text: 'RECEIPT', weight: 'bold', color: '#1DB446', size: 'sm' },
+                    { type: 'text', text: 'รายการสั่งซื้อ', weight: 'bold', size: 'xl', margin: 'md' },
+                    { type: 'text', text: `รหัส: ${data.orderId}`, size: 'xs', color: '#aaaaaa', wrap: true },
+                    { type: 'separator', margin: 'xxl' },
+                    { type: 'box', layout: 'vertical', margin: 'xxl', spacing: 'sm', contents: itemBoxes },
+                    { type: 'separator', margin: 'xxl' },
+                    { type: 'box', layout: 'horizontal', margin: 'md', contents: [
+                      { type: 'text', text: 'วิธีจัดส่ง', size: 'sm', color: '#555555' },
+                      { type: 'text', text: deliveryMethod, size: 'sm', color: '#111111', align: 'end' },
+                    ]},
+                    { type: 'box', layout: 'horizontal', margin: 'md', contents: [
+                      { type: 'text', text: 'ยอดรวมทั้งสิ้น', size: 'sm', color: '#555555' },
+                      { type: 'text', text: `฿${cartTotal}`, size: 'lg', color: '#ff0000', align: 'end', weight: 'bold' },
+                    ]},
+                  ],
+                },
+              },
             };
             await liff.sendMessages([flexMessage]);
           } catch (msgError: any) {
@@ -402,7 +353,7 @@ const AppContent: FC = () => {
         setSearchTerm('');
 
         if (liff.isInClient()) {
-          liff.closeWindow(); 
+          liff.closeWindow();
         } else {
           navigate('/history');
         }
@@ -410,7 +361,7 @@ const AppContent: FC = () => {
         throw new Error(data.error || 'สถานะไม่สำเร็จ');
       }
     } catch (error: any) {
-      console.error("Order Submit Error:", error);
+      console.error('Order Submit Error:', error);
       alert(`ไม่สามารถส่งคำสั่งซื้อได้: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -419,21 +370,18 @@ const AppContent: FC = () => {
 
   const isActive = (path: string) => location.pathname === path ? 'text-blue-600' : 'text-gray-400';
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    product.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const groupedFilteredProducts = useMemo(() => {
     const groups = filteredProducts.reduce((acc, product) => {
       const key = `${product.category}|${product.name}`;
-      if (!acc[key]) {
-        acc[key] = { name: product.name, category: product.category, variants: [] };
-      }
+      if (!acc[key]) acc[key] = { name: product.name, category: product.category, variants: [] };
       acc[key].variants.push(product);
       return acc;
-    }, {} as Record<string, { name: string, category: string, variants: Product[] }>);
-    
+    }, {} as Record<string, { name: string; category: string; variants: Product[] }>);
     return Object.values(groups);
   }, [filteredProducts]);
 
@@ -441,40 +389,37 @@ const AppContent: FC = () => {
     <div className="font-sans bg-gray-50 min-h-screen pb-20 overflow-x-hidden">
       {isLoading && (
         <div className="fixed inset-0 bg-white/80 z-[60] flex flex-col items-center justify-center backdrop-blur-sm">
-           <Loader2 className="animate-spin text-blue-600 mb-2" size={48} />
-           <p className="text-gray-800 font-bold">กำลังโหลดข้อมูล...</p>
+          <Loader2 className="animate-spin text-blue-600 mb-3" size={52} />
+          <p className="text-gray-800 font-bold text-lg">กำลังโหลดข้อมูล...</p>
         </div>
       )}
 
       {showRegisterPrompt && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
+        <div
+          className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={() => setShowRegisterPrompt(false)}
         >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-transform animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center"
+            onClick={e => e.stopPropagation()}
           >
             <div className="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle size={32} />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">ลงทะเบียนก่อนสั่งซื้อ</h3>
-            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-              คุณยังไม่ได้กรอกข้อมูลสำหรับจัดส่งสินค้า กรุณาลงทะเบียนข้อมูลในหน้าข้อมูลฉันก่อนหยิบสินค้าลงตะกร้านะครับ
+            <p className="text-base text-gray-500 mb-6 leading-relaxed">
+              กรุณากรอกข้อมูลจัดส่งในหน้า "ข้อมูลฉัน" ก่อนหยิบสินค้าลงตะกร้าครับ
             </p>
             <div className="flex gap-3">
-              <button 
-                onClick={() => setShowRegisterPrompt(false)} 
-                className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+              <button
+                onClick={() => setShowRegisterPrompt(false)}
+                className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl text-base hover:bg-gray-200 transition-colors"
               >
                 ยกเลิก
               </button>
-              <button 
-                onClick={() => {
-                  setShowRegisterPrompt(false);
-                  navigate('/register');
-                }} 
-                className="flex-1 py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95"
+              <button
+                onClick={() => { setShowRegisterPrompt(false); navigate('/register'); }}
+                className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl text-base hover:bg-blue-700 transition-colors shadow-md active:scale-95"
               >
                 ไปลงทะเบียน
               </button>
@@ -483,25 +428,25 @@ const AppContent: FC = () => {
         </div>
       )}
 
-      <header className="bg-white shadow-sm p-4 sticky top-0 z-40 border-b">
+      <header className="bg-white shadow-sm px-4 py-3 sticky top-0 z-40 border-b">
         <div className="container mx-auto flex justify-between items-center max-w-md">
           <div className="flex items-center gap-3">
             {userProfile?.pictureUrl ? (
-              <img src={userProfile.pictureUrl} alt="profile" className="w-10 h-10 rounded-full border-2 border-blue-100" />
+              <img src={userProfile.pictureUrl} alt="profile" className="w-11 h-11 rounded-full border-2 border-blue-100" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><User size={24}/></div>
+              <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><User size={24} /></div>
             )}
             <div>
-              <h1 className="text-sm font-bold truncate w-32">{userProfile?.displayName || 'Loading...'}</h1>
-              <p className={`text-[10px] font-medium ${isRegistered ? 'text-green-600' : 'text-orange-500'}`}>
+              <h1 className="text-base font-bold truncate w-36">{userProfile?.displayName || 'Loading...'}</h1>
+              <p className={`text-xs font-semibold ${isRegistered ? 'text-green-600' : 'text-orange-500'}`}>
                 {isRegistered ? '● สมาชิกยืนยันแล้ว' : '● ยังไม่ได้ลงทะเบียน'}
               </p>
             </div>
           </div>
-          <button onClick={() => setShowCart(true)} className="relative p-2.5 bg-gray-100 rounded-full">
-            <ShoppingCart size={22} />
+          <button onClick={() => setShowCart(true)} className="relative p-2.5 bg-gray-100 rounded-full active:bg-gray-200 transition-colors">
+            <ShoppingCart size={24} />
             {totalQuantity > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] px-1 flex items-center justify-center">
                 {totalQuantity}
               </span>
             )}
@@ -510,18 +455,17 @@ const AppContent: FC = () => {
       </header>
 
       <main className="container mx-auto p-4 max-w-md min-h-[70vh]">
-        
         {isLiffReady && location.pathname === '/menu' && (
           <div className="mb-4 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search size={20} className="text-gray-400" />
             </div>
             <input
               type="text"
-              placeholder="ค้นหาชื่อ หรือ รหัสสินค้า (ID)..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-sm"
+              placeholder="ค้นหาชื่อ หรือ รหัสสินค้า..."
+              className="w-full pl-12 pr-4 py-3 text-base border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
         )}
@@ -532,22 +476,17 @@ const AppContent: FC = () => {
             <Route path="/menu" element={
               searchTerm ? (
                 <div className="space-y-4 animate-in fade-in duration-300">
-                  <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
+                  <p className="text-sm font-semibold text-gray-500 px-1">
                     พบ {filteredProducts.length} รายการ ({groupedFilteredProducts.length} กลุ่มสินค้า)
                   </p>
-                  
                   {groupedFilteredProducts.length > 0 ? (
                     groupedFilteredProducts.map((group, index) => (
-                      <GroupedSearchProductCard 
-                        key={index} 
-                        group={group} 
-                        onAdd={addToCart} 
-                      />
+                      <GroupedSearchProductCard key={index} group={group} onAdd={addToCart} />
                     ))
                   ) : (
-                    <div className="text-center py-12 bg-white rounded-xl border border-gray-100 shadow-sm">
-                      <Search size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-500 text-sm">ไม่พบสินค้าที่คุณค้นหา</p>
+                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                      <Search size={40} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-gray-400 text-lg">ไม่พบสินค้าที่คุณค้นหา</p>
                     </div>
                   )}
                 </div>
@@ -562,10 +501,10 @@ const AppContent: FC = () => {
       </main>
 
       {showCart && (
-        <CartSummary 
-          cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod} 
+        <CartSummary
+          cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod}
           setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
-          isRegistered={isRegistered} handleCheckout={handleCheckout} 
+          isRegistered={isRegistered} handleCheckout={handleCheckout}
           userAddress={memberInfo?.address}
           updateQuantity={updateQuantity}
         />
@@ -575,16 +514,16 @@ const AppContent: FC = () => {
         <footer className="bg-white border-t fixed bottom-0 left-0 right-0 z-40 h-16 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <nav className="container mx-auto max-w-md flex justify-around items-center h-full">
             <Link to="/menu" onClick={() => setSearchTerm('')} className={`flex flex-col items-center justify-center w-full ${isActive('/menu')}`}>
-              <ShoppingCart size={24} />
-              <span className="text-[10px] font-bold mt-1">สั่งสินค้า</span>
+              <ShoppingCart size={26} />
+              <span className="text-xs font-bold mt-1">สั่งสินค้า</span>
             </Link>
             <Link to="/history" className={`flex flex-col items-center justify-center w-full ${isActive('/history')}`}>
-              <HistoryIcon size={24} />
-              <span className="text-[10px] font-bold mt-1">ประวัติ</span>
+              <HistoryIcon size={26} />
+              <span className="text-xs font-bold mt-1">ประวัติ</span>
             </Link>
             <Link to="/register" className={`flex flex-col items-center justify-center w-full ${isActive('/register')}`}>
-              <User size={24} />
-              <span className="text-[10px] font-bold mt-1">ข้อมูลฉัน</span>
+              <User size={26} />
+              <span className="text-xs font-bold mt-1">ข้อมูลฉัน</span>
             </Link>
           </nav>
         </footer>

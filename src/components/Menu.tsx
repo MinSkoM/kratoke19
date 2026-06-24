@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { Product } from '../types';
 import { ChevronRight, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
+import { getProductImage } from '../utils/productImage';
 
 interface MenuProps {
   products: Product[];
@@ -13,13 +14,15 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
 
-  const categories = useMemo(() => {
-    return Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
-  }, [products]);
+  const categories = useMemo(() => (
+    Array.from(new Set(products.map(p => p.category))).filter(Boolean)
+  ), [products]);
 
   const productNamesInCategory = useMemo(() => {
     if (!selectedCategory) return [];
-    return Array.from(new Set(products.filter(p => p.category === selectedCategory).map(p => p.name)));
+    return Array.from(new Set(
+      products.filter(p => p.category === selectedCategory).map(p => p.name)
+    ));
   }, [products, selectedCategory]);
 
   const variants = useMemo(() => {
@@ -32,38 +35,70 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
     else if (selectedCategory) setSelectedCategory(null);
   };
 
-  if (isLoading) return <div className="text-center py-10 font-medium text-gray-500">กำลังโหลดรายการสินค้า...</div>;
+  if (isLoading) return (
+    <div className="text-center py-16 text-gray-400">
+      <Package size={40} className="mx-auto mb-3 animate-pulse" />
+      <p className="text-lg">กำลังโหลดรายการสินค้า...</p>
+    </div>
+  );
 
   return (
     <div className="pb-24">
-      {/* ส่วนหัวปุ่มย้อนกลับ */}
-      {(selectedCategory || selectedName) && (
-        <button onClick={goBack} className="flex items-center text-blue-600 mb-4 font-bold p-1">
-          <ArrowLeft size={20} className="mr-1" /> ย้อนกลับ
-        </button>
-      )}
-
-      {/* หน้า 1: เลือกหมวดหมู่ */}
-      {!selectedCategory && (
-        <div className="space-y-3">
-          <h2 className="font-bold text-xl mb-4 text-gray-800">หมวดหมู่สินค้า</h2>
-          {categories.map((cat) => (
-            <div key={cat} onClick={() => setSelectedCategory(cat)} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center active:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><Package size={20}/></div>
-                <span className="font-bold text-gray-700">{cat}</span>
-              </div>
-              <ChevronRight className="text-gray-400" />
-            </div>
-          ))}
+      {/* Breadcrumb */}
+      {selectedCategory && (
+        <div className="flex items-center gap-2 mb-4">
+          <button onClick={goBack} className="flex items-center gap-1 text-blue-600 font-bold text-base py-2 pr-2">
+            <ArrowLeft size={20} /> ย้อนกลับ
+          </button>
+          <span className="text-gray-300">›</span>
+          <span className="text-gray-600 font-semibold text-base truncate">{selectedCategory}</span>
+          {selectedName && (
+            <>
+              <span className="text-gray-300">›</span>
+              <span className="text-gray-800 font-bold text-base truncate">{selectedName}</span>
+            </>
+          )}
         </div>
       )}
 
-      {/* หน้า 2: เลือกชื่อรายการ */}
+      {/* Page 1: Categories */}
+      {!selectedCategory && (
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">หมวดหมู่สินค้า</h2>
+          {categories.map(cat => {
+            const sample = products.find(p => p.category === cat);
+            return (
+              <div
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors cursor-pointer"
+              >
+                {sample && (
+                  <img
+                    src={getProductImage(sample)}
+                    alt={cat}
+                    className="w-16 h-16 object-cover rounded-xl border border-gray-100 shrink-0"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+                <div className="flex-1">
+                  <span className="font-bold text-gray-800 text-lg">{cat}</span>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    {products.filter(p => p.category === cat).length} รายการ
+                  </p>
+                </div>
+                <ChevronRight size={22} className="text-gray-300 shrink-0" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Page 2: Product names in category */}
       {selectedCategory && !selectedName && (
         <div className="space-y-3">
-          <h2 className="font-bold text-lg text-gray-500 px-1">{selectedCategory}</h2>
-          {productNamesInCategory.map((name) => {
+          <h2 className="text-xl font-bold text-gray-700 mb-2">{selectedCategory}</h2>
+          {productNamesInCategory.map(name => {
             const productVariants = products.filter(p => p.name === name && p.category === selectedCategory);
             const firstItem = productVariants[0];
 
@@ -72,30 +107,36 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
             }
 
             return (
-              <div key={name} onClick={() => setSelectedName(name)} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors">
-                {firstItem?.image && (
-                  <img src={firstItem.image} className="w-16 h-16 object-cover rounded-xl border border-gray-100" alt={name} />
-                )}
+              <div
+                key={name}
+                onClick={() => setSelectedName(name)}
+                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <img
+                  src={getProductImage(firstItem)}
+                  alt={name}
+                  className="w-16 h-16 object-cover rounded-xl border border-gray-100 shrink-0"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
                 <div className="flex-1">
-                   <div className="font-bold text-gray-800">{name}</div>
-                   <div className="text-xs text-blue-500 mt-1">มี {productVariants.length} ตัวเลือก</div>
+                  <div className="font-bold text-gray-800 text-lg leading-tight">{name}</div>
+                  <div className="text-sm text-blue-500 mt-1 font-semibold">{productVariants.length} ตัวเลือก</div>
                 </div>
-                <ChevronRight className="text-gray-400" />
+                <ChevronRight size={22} className="text-gray-300 shrink-0" />
               </div>
             );
           })}
         </div>
       )}
 
-      {/* หน้า 3: แสดงสเปกพร้อม ID รายตัว (กรณีสินค้ามีหลายสเปก) */}
+      {/* Page 3: Variants */}
       {selectedName && (
         <div className="space-y-4">
-          <div className="px-1">
-            <h2 className="font-bold text-xl text-gray-800 leading-tight">{selectedName}</h2>
-            <p className="text-sm text-gray-500">เลือกขนาดหรือสเปกที่ต้องการ</p>
+          <div className="px-1 mb-2">
+            <h2 className="text-2xl font-bold text-gray-800 leading-tight">{selectedName}</h2>
+            <p className="text-base text-gray-500 mt-1">เลือกขนาดหรือสเปกที่ต้องการ</p>
           </div>
-          
-          {variants.map((variant) => (
+          {variants.map(variant => (
             <VariantCard key={variant.id} variant={variant} onAdd={addToCart} />
           ))}
         </div>
@@ -104,73 +145,55 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   );
 };
 
-// --- Component: สำหรับสินค้าที่มีแบบเดียว ---
 const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState<number | string>(1);
 
   const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (val === '') {
-      setQty('');
-    } else {
-      const num = parseInt(val, 10);
-      if (!isNaN(num) && num > 0) setQty(num);
-    }
-  };
-
-  const handleBlur = () => {
-    if (qty === '' || Number(qty) < 1) setQty(1); 
+    if (val === '') { setQty(''); return; }
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num > 0) setQty(num);
   };
 
   return (
     <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex gap-4 items-start mb-3">
-        {variant.image && (
-          <img src={variant.image} className="w-16 h-16 object-cover rounded-xl border border-gray-100 shadow-sm" alt={variant.name} />
-        )}
+        <img
+          src={getProductImage(variant)}
+          alt={variant.name}
+          className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm shrink-0"
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
         <div className="flex-1">
-          <div className="font-bold text-gray-800 text-base">{variant.name}</div>
-          <div className="text-xs text-gray-500 mt-1 space-x-2">
-            {variant.size && <span>ขนาด: {variant.size}</span>}
-            {variant.thickness && <span>หนา: {variant.thickness}</span>}
+          <div className="font-bold text-gray-800 text-lg leading-tight">{variant.name}</div>
+          <div className="text-sm text-gray-500 mt-1 space-x-2">
+            {variant.size && <span>ขนาด: <strong>{variant.size}</strong></span>}
+            {variant.thickness && <span>หนา: <strong>{variant.thickness}</strong></span>}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-gray-50 pt-3">
-        <div className="text-lg font-black text-blue-600">{variant.price}.-</div>
-        
-        <div className="flex items-center gap-2"> {/* ลดช่องว่าง gap เหลือ 2 */}
-          <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
-            <button 
-              onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
-            >
-              <Minus size={14} />
+      <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+        <div className="text-2xl font-black text-blue-600">{variant.price}.-</div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
+            <button onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} className="px-3 py-2 text-gray-500 hover:bg-gray-200 transition-colors">
+              <Minus size={16} />
             </button>
-            <input 
-              type="number"
-              min="1"
-              value={qty}
+            <input
+              type="number" min="1" value={qty}
               onChange={handleQtyChange}
-              onBlur={handleBlur}
-              className="w-6 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
-              style={{ MozAppearance: 'textfield' }} 
+              onBlur={() => { if (qty === '' || Number(qty) < 1) setQty(1); }}
+              className="w-10 text-center font-bold text-gray-700 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+              style={{ MozAppearance: 'textfield' }}
             />
-            <button 
-              onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
-            >
-              <Plus size={14} />
+            <button onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} className="px-3 py-2 text-gray-500 hover:bg-gray-200 transition-colors">
+              <Plus size={16} />
             </button>
           </div>
-
           <button
-            onClick={() => {
-              onAdd(variant, Number(qty) || 1);
-              setQty(1);
-            }}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm active:scale-95 transition-all whitespace-nowrap"
+            onClick={() => { onAdd(variant, Number(qty) || 1); setQty(1); }}
+            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold text-base shadow-sm active:scale-95 transition-all"
           >
             เพิ่ม
           </button>
@@ -180,78 +203,53 @@ const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => v
   );
 };
 
-// --- Component: สำหรับสินค้าที่มีหลายสเปก ---
 const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
   const [qty, setQty] = useState<number | string>(1);
 
   const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (val === '') {
-      setQty('');
-    } else {
-      const num = parseInt(val, 10);
-      if (!isNaN(num) && num > 0) setQty(num);
-    }
-  };
-
-  const handleBlur = () => {
-    if (qty === '' || Number(qty) < 1) setQty(1);
+    if (val === '') { setQty(''); return; }
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num > 0) setQty(num);
   };
 
   return (
-    <div className="bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm hover:border-blue-100 transition-all">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            {variant.size && (
-              <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
-            )}
-            {variant.thickness && (
-              <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>
-            )}
-            {variant.weight && (
-              <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>
-            )}
-          </div>
-        </div>
+    <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-base mb-4">
+        {variant.size && (
+          <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>
+        )}
+        {variant.thickness && (
+          <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>
+        )}
+        {variant.weight && (
+          <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>
+        )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-dashed pt-4">
-        <div className="text-xl font-black text-blue-600">{variant.price}.-</div>
-        
-        <div className="flex items-center gap-2"> {/* ลดช่องว่าง gap เหลือ 2 */}
-          <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
-            <button 
-              onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} 
-              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
-            >
-              <Minus size={14} />
+      <div className="flex items-center justify-between border-t border-dashed border-gray-200 pt-4">
+        <div className="text-2xl font-black text-blue-600">{variant.price}.-</div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
+            <button onClick={() => setQty(q => q === '' ? 1 : Math.max(1, Number(q) - 1))} className="px-3 py-2 text-gray-500 hover:bg-gray-200 transition-colors">
+              <Minus size={16} />
             </button>
-            <input 
-              type="number"
-              min="1"
-              value={qty}
+            <input
+              type="number" min="1" value={qty}
               onChange={handleQtyChange}
-              onBlur={handleBlur}
-              className="w-6 p-0 m-0 text-center font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
+              onBlur={() => { if (qty === '' || Number(qty) < 1) setQty(1); }}
+              className="w-10 text-center font-bold text-gray-700 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
               style={{ MozAppearance: 'textfield' }}
             />
-            <button 
-              onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} 
-              className="px-1.5 py-1 text-gray-500 active:text-blue-600 hover:bg-gray-100 transition-colors"
-            >
-              <Plus size={14} />
+            <button onClick={() => setQty(q => q === '' ? 2 : Number(q) + 1)} className="px-3 py-2 text-gray-500 hover:bg-gray-200 transition-colors">
+              <Plus size={16} />
             </button>
           </div>
-
           <button
-            onClick={() => {
-              onAdd(variant, Number(qty) || 1);
-              setQty(1);
-            }}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all whitespace-nowrap"
+            onClick={() => { onAdd(variant, Number(qty) || 1); setQty(1); }}
+            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold text-base shadow-md active:scale-95 transition-all"
           >
-            เพิ่มลงตะกร้า
+            เพิ่ม
           </button>
         </div>
       </div>
