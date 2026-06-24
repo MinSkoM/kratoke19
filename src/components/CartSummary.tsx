@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { CartItem } from '../types';
-import { X, MapPin, Plus, Minus, Trash2 } from 'lucide-react';
+import { X, MapPin, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 
 interface CartSummaryProps {
   cart: CartItem[];
   cartTotal: number;
   deliveryMethod: 'รับที่ร้าน' | 'จัดส่ง';
-  setDeliveryMethod: (method: 'รับที่ร้าน' | 'จัดส่ง') => void;
-  setShowCart: (show: boolean) => void;
+  setDeliveryMethod: (m: 'รับที่ร้าน' | 'จัดส่ง') => void;
+  setShowCart: (v: boolean) => void;
   isRegistered: boolean;
   handleCheckout: () => void;
   userAddress?: string;
@@ -16,145 +16,136 @@ interface CartSummaryProps {
 }
 
 const CartSummary: FC<CartSummaryProps> = ({
-  cart, cartTotal, deliveryMethod, setDeliveryMethod, setShowCart,
-  isRegistered, handleCheckout, userAddress, updateQuantity
+  cart, cartTotal, deliveryMethod, setDeliveryMethod,
+  setShowCart, isRegistered, handleCheckout, userAddress, updateQuantity,
 }) => {
+  const canCheckout = cart.length > 0 && !(deliveryMethod === 'จัดส่ง' && !userAddress);
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50" onClick={() => setShowCart(false)}>
-      <div className="bg-white rounded-t-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800">ตะกร้าสินค้า</h2>
-          <button onClick={() => setShowCart(false)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <X size={24} />
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center backdrop-blur-sm"
+      onClick={() => setShowCart(false)}>
+      <div className="bg-white w-full max-w-md rounded-t-3xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}>
+
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-200 rounded-full"/>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <ShoppingBag size={20} className="text-blue-600"/>
+            <h2 className="text-lg font-black text-gray-900">ตะกร้าสินค้า</h2>
+          </div>
+          <button onClick={() => setShowCart(false)}
+            className="p-2 rounded-full bg-gray-100 text-gray-500 active:bg-gray-200 transition-colors">
+            <X size={18}/>
           </button>
         </div>
 
-        <div className="space-y-1 max-h-64 overflow-y-auto px-5 py-3">
-          {cart.map(item => (
-            <CartItemRow key={item.id} item={item} updateQuantity={updateQuantity} />
-          ))}
+        {/* Items list */}
+        <div className="max-h-56 overflow-y-auto px-5 py-3 space-y-1">
+          {cart.map(item => <CartItemRow key={item.id} item={item} updateQuantity={updateQuantity}/>)}
           {cart.length === 0 && (
-            <p className="text-center text-gray-400 text-lg py-6">ตะกร้าของคุณว่างอยู่</p>
+            <div className="text-center py-8 text-gray-400">
+              <ShoppingBag size={36} className="mx-auto mb-2 opacity-30"/>
+              <p className="text-base">ตะกร้าของคุณว่างอยู่</p>
+            </div>
           )}
         </div>
 
         {cart.length > 0 && (
-          <div className="px-5 pb-2">
-            <div className="border-t border-gray-100 pt-4 mb-3">
-              <h3 className="font-bold text-base text-gray-700 mb-2">วิธีรับสินค้า</h3>
+          <div className="px-5 pb-5">
+            {/* Delivery toggle */}
+            <div className="border-t border-gray-100 pt-4 mb-4">
+              <p className="text-sm font-bold text-gray-600 mb-2">วิธีรับสินค้า</p>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setDeliveryMethod('รับที่ร้าน')}
-                  className={`py-3 text-base font-bold rounded-xl border-2 transition-all ${deliveryMethod === 'รับที่ร้าน' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-200 hover:border-blue-300'}`}
-                >
-                  รับที่ร้าน
-                </button>
-                <button
-                  onClick={() => setDeliveryMethod('จัดส่ง')}
-                  className={`py-3 text-base font-bold rounded-xl border-2 transition-all ${deliveryMethod === 'จัดส่ง' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-200 hover:border-blue-300'}`}
-                >
-                  จัดส่ง
-                </button>
+                {(['รับที่ร้าน', 'จัดส่ง'] as const).map(m => (
+                  <button key={m} onClick={() => setDeliveryMethod(m)}
+                    className={`py-3 rounded-2xl text-base font-bold border-2 transition-all ${
+                      deliveryMethod === m
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-gray-500 border-gray-200'
+                    }`}>
+                    {m}
+                  </button>
+                ))}
               </div>
             </div>
 
+            {/* Address display */}
             {deliveryMethod === 'จัดส่ง' && (
-              <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-3 flex items-start gap-2">
-                <MapPin size={18} className="text-blue-500 mt-0.5 shrink-0" />
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex gap-3 items-start mb-4">
+                <MapPin size={18} className="text-blue-500 mt-0.5 shrink-0"/>
                 <div>
-                  <p className="text-sm font-bold text-blue-800 mb-1">จัดส่งไปที่:</p>
-                  <p className="text-base text-gray-700 leading-snug">
+                  <p className="text-xs font-bold text-blue-700 mb-0.5">จัดส่งไปที่</p>
+                  <p className="text-sm text-gray-700 leading-snug">
                     {userAddress ?? <span className="text-red-500 font-semibold">ยังไม่มีที่อยู่ กรุณาอัปเดตในหน้าข้อมูลฉัน</span>}
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="flex justify-between items-center py-3 border-t border-gray-100">
-              <span className="text-lg font-bold text-gray-700">ยอดสุทธิ</span>
-              <span className="text-2xl font-black text-blue-600">{cartTotal} บาท</span>
+            {/* Total */}
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-base font-bold text-gray-600">ยอดสุทธิ</span>
+              <span className="text-3xl font-black text-orange-500">{cartTotal}฿</span>
             </div>
+
+            {/* Checkout button */}
+            <button onClick={handleCheckout} disabled={!canCheckout}
+              className="w-full py-4 rounded-2xl text-lg font-black shadow-md transition-all active:scale-95
+                bg-green-500 text-white hover:bg-green-600
+                disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:scale-100">
+              {isRegistered ? '✓ ส่งคำสั่งซื้อ' : 'ลงทะเบียนก่อนสั่งซื้อ'}
+            </button>
           </div>
         )}
-
-        <div className="px-5 pb-6">
-          <button
-            onClick={handleCheckout}
-            disabled={cart.length === 0 || (deliveryMethod === 'จัดส่ง' && !userAddress)}
-            className="w-full bg-green-500 text-white py-4 rounded-2xl text-lg font-bold hover:bg-green-600 disabled:bg-gray-200 disabled:text-gray-400 transition-all shadow-md active:scale-95"
-          >
-            {isRegistered ? 'ส่งคำสั่งซื้อ' : 'ลงทะเบียนก่อนสั่งซื้อ'}
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
+/* ── Cart item row ─────────────────────────────────────────────────────── */
 const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: number) => void }> = ({ item, updateQuantity }) => {
-  const [inputValue, setInputValue] = useState<number | string>(item.quantity);
+  const [input, setInput] = useState<number | string>(item.quantity);
 
-  useEffect(() => {
-    setInputValue(item.quantity);
-  }, [item.quantity]);
+  useEffect(() => { setInput(item.quantity); }, [item.quantity]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === '') {
-      setInputValue('');
-    } else {
-      const num = parseInt(val, 10);
-      if (!isNaN(num) && num > 0) {
-        setInputValue(num);
-        updateQuantity(item.id, num - item.quantity);
-      }
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === '') { setInput(''); return; }
+    const n = parseInt(v, 10);
+    if (!isNaN(n) && n > 0) { setInput(n); updateQuantity(item.id, n - item.quantity); }
   };
 
   const handleBlur = () => {
-    if (inputValue === '' || Number(inputValue) < 1) {
-      setInputValue(1);
-      if (item.quantity !== 1) updateQuantity(item.id, 1 - item.quantity);
-    }
+    if (!input || Number(input) < 1) { setInput(1); if (item.quantity !== 1) updateQuantity(item.id, 1 - item.quantity); }
   };
 
-  const specParts = [item.size, item.thickness].filter(Boolean);
+  const specs = [item.size, item.thickness].filter(Boolean);
 
   return (
-    <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-      <div className="flex-1 pr-3">
-        <p className="font-semibold text-base text-gray-800 leading-tight">
-          {item.name}
-          {specParts.length > 0 && (
-            <span className="text-blue-500 font-normal ml-1 text-sm">[{specParts.join(', ')}]</span>
-          )}
-        </p>
-        <p className="text-sm text-gray-500 mt-0.5">{item.price} บาท/ชิ้น</p>
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{item.name}</p>
+        {specs.length > 0 && <p className="text-xs text-blue-500 font-medium mt-0.5">[{specs.join(', ')}]</p>}
+        <p className="text-xs text-gray-400 mt-0.5">{item.price}฿/ชิ้น</p>
       </div>
-
-      <div className="flex flex-col items-end gap-2">
-        <p className="font-bold text-base text-blue-600">{item.price * item.quantity} ฿</p>
-        <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
-          <button
-            onClick={() => updateQuantity(item.id, -1)}
-            className="px-3 py-2 text-gray-500 hover:bg-gray-200 active:text-red-500 transition-colors"
-          >
-            {item.quantity === 1 ? <Trash2 size={16} className="text-red-400" /> : <Minus size={16} />}
+      <div className="flex flex-col items-end gap-1.5 shrink-0">
+        <p className="text-sm font-black text-orange-500">{item.price * item.quantity}฿</p>
+        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
+          <button onClick={() => updateQuantity(item.id, -1)}
+            className="px-2.5 py-1.5 text-gray-400 active:text-red-500 transition-colors">
+            {item.quantity === 1 ? <Trash2 size={14} className="text-red-400"/> : <Minus size={14}/>}
           </button>
-          <input
-            type="number"
-            min="1"
-            value={inputValue}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            className="w-10 text-center text-base font-bold text-gray-700 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-            style={{ MozAppearance: 'textfield' }}
-          />
-          <button
-            onClick={() => updateQuantity(item.id, 1)}
-            className="px-3 py-2 text-gray-500 hover:bg-gray-200 active:text-blue-600 transition-colors"
-          >
-            <Plus size={16} />
+          <input type="number" min="1" value={input} onChange={handleChange} onBlur={handleBlur}
+            className="w-8 text-center text-sm font-bold text-gray-800 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+            style={{ MozAppearance: 'textfield' }}/>
+          <button onClick={() => updateQuantity(item.id, 1)}
+            className="px-2.5 py-1.5 text-gray-400 active:text-blue-600 transition-colors">
+            <Plus size={14}/>
           </button>
         </div>
       </div>
