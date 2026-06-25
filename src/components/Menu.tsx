@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { Product } from '../types';
-import { ChevronRight, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
+import { ChevronDown, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
 import { getProductImage } from '../utils/productImage';
-import { getCategoryTheme } from '../App';
 
 interface MenuProps {
   products: Product[];
@@ -11,28 +10,39 @@ interface MenuProps {
   addToCart: (product: Product, quantity: number) => void;
 }
 
-const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedName,     setSelectedName]     = useState<string | null>(null);
+const VARIANT_FIELDS: { key: keyof Product; label: string }[] = [
+  { key: 'size',      label: 'ขนาด' },
+  { key: 'hole',      label: 'ขนาด' },
+  { key: 'thickness', label: 'ความหนา' },
+];
 
-  const categories = useMemo(() =>
-    Array.from(new Set(products.map(p => p.category))).filter(Boolean),
+/* Fields that actually differ across this product's variants */
+function varyingFields(variants: Product[]) {
+  return VARIANT_FIELDS.filter(({ key }) => {
+    const vals = new Set(variants.map(v => String(v[key] ?? '')).filter(Boolean));
+    return vals.size > 1;
+  });
+}
+
+const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [expandedName,  setExpandedName]  = useState<string | null>(null);
+
+  /* Level 1: major groups A–E derived from first char of product id */
+  const groups = useMemo(() =>
+    Array.from(new Set(products.map(p => p.id?.charAt(0).toUpperCase()).filter(Boolean))).sort(),
     [products]);
 
-  const namesInCategory = useMemo(() => {
-    if (!selectedCategory) return [];
-    return Array.from(new Set(products.filter(p => p.category === selectedCategory).map(p => p.name)));
-  }, [products, selectedCategory]);
+  /* Level 2: unique product names within the selected group */
+  const namesInGroup = useMemo(() => {
+    if (!selectedGroup) return [];
+    return Array.from(new Set(
+      products.filter(p => p.id?.charAt(0).toUpperCase() === selectedGroup).map(p => p.name)
+    ));
+  }, [products, selectedGroup]);
 
-  const variants = useMemo(() => {
-    if (!selectedName || !selectedCategory) return [];
-    return products.filter(p => p.name === selectedName && p.category === selectedCategory);
-  }, [products, selectedName, selectedCategory]);
-
-  const goBack = () => {
-    if (selectedName) setSelectedName(null);
-    else if (selectedCategory) setSelectedCategory(null);
-  };
+  const handleToggle = (name: string) =>
+    setExpandedName(prev => prev === name ? null : name);
 
   if (isLoading) return (
     <div className="text-center py-20 text-gray-400">
@@ -44,46 +54,39 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   return (
     <div className="pb-6">
 
-      {/* Breadcrumb */}
-      {selectedCategory && (
-        <div className="flex items-center gap-2 mb-5">
-          <button onClick={goBack}
-            className="flex items-center gap-1.5 bg-white border border-gray-200 text-blue-600 font-bold text-sm px-3 py-2 rounded-full shadow-sm active:scale-95 transition-transform">
-            <ArrowLeft size={16}/> ย้อนกลับ
-          </button>
-          <span className="text-gray-400 text-sm">›</span>
-          <span className="text-gray-700 font-semibold text-sm truncate">{selectedCategory}</span>
-          {selectedName && <>
-            <span className="text-gray-400 text-sm">›</span>
-            <span className="text-gray-900 font-bold text-sm truncate">{selectedName}</span>
-          </>}
-        </div>
-      )}
-
-      {/* Page 1 — Category grid */}
-      {!selectedCategory && (
+      {/* ── Level 1: A–E group cards ───────────────────────────────────── */}
+      {!selectedGroup && (
         <div>
-          <h2 className="text-2xl font-black text-gray-900 mb-5">หมวดหมู่สินค้า</h2>
+          <h2 className="text-2xl font-black text-gray-900 mb-4">หมวดหมู่สินค้า</h2>
           <div className="grid grid-cols-2 gap-3">
-            {categories.map(cat => {
-              const theme   = getCategoryTheme(cat);
-              const sample  = products.find(p => p.category === cat);
-              const count   = products.filter(p => p.category === cat).length;
+            {groups.map(grp => {
+              const grpProducts = products.filter(p => p.id?.charAt(0).toUpperCase() === grp);
+              const count = grpProducts.length;
+              /* unique names → one image per product type, up to 4 */
+              const previews = Array.from(
+                new Map(grpProducts.map(p => [p.name, p])).values()
+              ).slice(0, 4);
               return (
-                <button key={cat} onClick={() => setSelectedCategory(cat)}
-                  className={`${theme.bg} border ${theme.border} rounded-3xl overflow-hidden shadow-sm active:scale-95 transition-transform text-left`}>
-                  <div className="relative">
-                    <img
-                      src={sample ? getProductImage(sample) : ''}
-                      alt={cat}
-                      className="w-full h-28 object-cover"
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"/>
+                <button key={grp} onClick={() => { setSelectedGroup(grp); setExpandedName(null); }}
+                  className="relative h-40 rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-transform text-left bg-gray-100">
+                  {/* 2×2 image mosaic */}
+                  <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+                    {[0,1,2,3].map(i => (
+                      <div key={i} className="overflow-hidden bg-gray-200">
+                        {previews[i] && (
+                          <img src={getProductImage(previews[i])} alt=""
+                            className="w-full h-full object-cover"
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div className="px-3 py-3">
-                    <p className="font-black text-gray-900 text-base leading-tight">{cat}</p>
-                    <p className="text-xs text-gray-500 mt-0.5 font-medium">{count} รายการ</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"/>
+                  <div className="absolute top-3 left-3.5 w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <span className="text-white font-black text-lg leading-none">{grp}</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3.5">
+                    <p className="text-white/70 text-xs font-medium">{count} รายการ</p>
                   </div>
                 </button>
               );
@@ -92,42 +95,33 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         </div>
       )}
 
-      {/* Page 2 — Product names */}
-      {selectedCategory && !selectedName && (
+      {/* ── Level 2: flat product list for the group ───────────────────── */}
+      {selectedGroup && (
         <div>
-          <h2 className="text-xl font-black text-gray-900 mb-4">{selectedCategory}</h2>
-          <div className="space-y-3">
-            {namesInCategory.map(name => {
-              const productVariants = products.filter(p => p.name === name && p.category === selectedCategory);
-              const first = productVariants[0];
-              if (productVariants.length === 1) return <SingleItemCard key={name} variant={first} onAdd={addToCart}/>;
+          <div className="flex items-center gap-2 mb-4">
+            <button onClick={() => { setSelectedGroup(null); setExpandedName(null); }}
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-blue-600 font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0">
+              <ArrowLeft size={15}/> ย้อนกลับ
+            </button>
+            <span className="text-sm font-semibold text-gray-600">กลุ่ม {selectedGroup}</span>
+          </div>
+
+          <div className="space-y-2.5">
+            {namesInGroup.map(name => {
+              const variants = products.filter(
+                p => p.name === name && p.id?.charAt(0).toUpperCase() === selectedGroup
+              );
               return (
-                <button key={name} onClick={() => setSelectedName(name)}
-                  className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 active:scale-[0.98] transition-transform text-left">
-                  <img src={getProductImage(first)} alt={name}
-                    className="w-16 h-16 object-cover rounded-xl shrink-0 bg-gray-100"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 text-base leading-tight">{name}</p>
-                    <p className="text-sm text-blue-500 font-semibold mt-1">{productVariants.length} ตัวเลือก</p>
-                  </div>
-                  <ChevronRight size={20} className="text-gray-300 shrink-0"/>
-                </button>
+                <ProductCard
+                  key={name}
+                  name={name}
+                  variants={variants}
+                  isExpanded={expandedName === name}
+                  onToggle={() => handleToggle(name)}
+                  onAdd={(p, q) => { addToCart(p, q); setExpandedName(null); }}
+                />
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* Page 3 — Variants */}
-      {selectedName && (
-        <div>
-          <div className="mb-4">
-            <h2 className="text-xl font-black text-gray-900 leading-tight">{selectedName}</h2>
-            <p className="text-sm text-gray-500 mt-1">เลือกขนาดหรือสเปกที่ต้องการ</p>
-          </div>
-          <div className="space-y-3">
-            {variants.map(v => <VariantCard key={v.id} variant={v} onAdd={addToCart}/>)}
           </div>
         </div>
       )}
@@ -135,79 +129,167 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
   );
 };
 
-/* ── Single item card (1 variant) ──────────────────────────────────────── */
-const SingleItemCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
-  const [qty, setQty] = useState<number | string>(1);
-  const numQty = Number(qty) || 1;
+/* ── Shared qty stepper ─────────────────────────────────────────────────── */
+const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => void }> = ({ qty, setQty }) => (
+  <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
+    <button onClick={() => setQty(Math.max(1, Number(qty) - 1))}
+      className="px-3 py-2 text-gray-400 active:text-blue-600 transition-colors">
+      <Minus size={14}/>
+    </button>
+    <input type="number" min="1" value={qty}
+      onChange={e => { const v = e.target.value; if (v === '') { setQty(''); return; } const n = parseInt(v, 10); if (!isNaN(n) && n > 0) setQty(n); }}
+      onBlur={() => { if (!qty || Number(qty) < 1) setQty(1); }}
+      className="w-8 text-center font-bold text-gray-800 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+      style={{ MozAppearance: 'textfield' }}/>
+    <button onClick={() => setQty(Number(qty) + 1)}
+      className="px-3 py-2 text-gray-400 active:text-blue-600 transition-colors">
+      <Plus size={14}/>
+    </button>
+  </div>
+);
 
+/* ── Product card ───────────────────────────────────────────────────────── */
+const ProductCard: FC<{
+  name: string;
+  variants: Product[];
+  isExpanded: boolean;
+  onToggle: () => void;
+  onAdd: (p: Product, q: number) => void;
+}> = ({ name, variants, isExpanded, onToggle, onAdd }) => {
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
+  const [qty, setQty] = useState<number | string>(1);
+
+  const first    = variants[0];
+  const fields   = useMemo(() => varyingFields(variants), [variants]);
+  const isSingle = variants.length === 1;
+
+  const filteredVariants = useMemo(() =>
+    variants.filter(v =>
+      Object.entries(selectedAttrs).every(([k, val]) => String(v[k as keyof Product] ?? '') === val)
+    ), [variants, selectedAttrs]);
+
+  const exactVariant = useMemo(() => {
+    if (filteredVariants.length === 0) return null;
+    if (filteredVariants.length === 1) return filteredVariants[0];
+    const selectedKeys = new Set(Object.keys(selectedAttrs));
+    const remaining = fields.filter(f => !selectedKeys.has(f.key));
+    const allUnique = remaining.every(f => {
+      const vals = new Set(filteredVariants.map(v => String(v[f.key] ?? '')).filter(Boolean));
+      return vals.size <= 1;
+    });
+    return allUnique ? filteredVariants[0] : null;
+  }, [filteredVariants, fields, selectedAttrs]);
+
+  const handlePick = (fieldKey: string, value: string) => {
+    const idx = fields.findIndex(f => f.key === fieldKey);
+    const next: Record<string, string> = {};
+    fields.slice(0, idx).forEach(f => { if (selectedAttrs[f.key]) next[f.key] = selectedAttrs[f.key]; });
+    next[fieldKey] = value;
+    setSelectedAttrs(next);
+    setQty(1);
+  };
+
+  const handleToggle = () => { setSelectedAttrs({}); setQty(1); onToggle(); };
+
+  /* ── Single-variant: show ALL details fully visible (no expand needed) ── */
+  if (isSingle) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex gap-3.5 p-4 items-start">
+          <img src={getProductImage(first)} alt={first.name}
+            className="w-[60px] h-[60px] object-cover rounded-xl shrink-0 bg-gray-100"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-base leading-snug mb-2">{first.name}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {first.size      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{first.size}</strong></span>}
+              {first.hole      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{first.hole}</strong></span>}
+              {first.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{first.thickness}</strong></span>}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
+          <span className="text-2xl font-black text-orange-500">{first.price}฿</span>
+          <div className="flex items-center gap-2">
+            <QtyControl qty={qty} setQty={setQty}/>
+            <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+              เพิ่ม
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Multi-variant: cascading chip selection ── */
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex gap-4 p-4 items-start">
-        <img src={getProductImage(variant)} alt={variant.name}
-          className="w-18 h-18 w-[72px] h-[72px] object-cover rounded-xl shrink-0 bg-gray-100"
+      <button onClick={handleToggle}
+        className="w-full flex items-center gap-3.5 p-4 text-left active:bg-gray-50 transition-colors">
+        <img src={getProductImage(first)} alt={name}
+          className="w-[60px] h-[60px] object-cover rounded-xl shrink-0 bg-gray-100"
           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-900 text-base leading-tight">{variant.name}</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-gray-500 mt-1.5">
-            {variant.size      && <span>ขนาด <strong className="text-gray-800">{variant.size}</strong></span>}
-            {variant.thickness && <span>หนา <strong className="text-gray-800">{variant.thickness}</strong></span>}
-          </div>
+          <p className="font-bold text-gray-900 text-base leading-snug">{name}</p>
+          <p className="text-sm text-blue-500 font-semibold mt-1">
+            {isExpanded ? 'กำลังเลือก...' : `${variants.length} ตัวเลือก • กดเพื่อเลือก`}
+          </p>
         </div>
-      </div>
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <span className="text-2xl font-black text-orange-500">{variant.price}฿</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
-            <button onClick={() => setQty(q => Math.max(1, Number(q) - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
-            <input type="number" min="1" value={qty}
-              onChange={e => { const v = e.target.value; if (v === '') setQty(''); else { const n = parseInt(v,10); if (!isNaN(n) && n > 0) setQty(n); }}}
-              onBlur={() => { if (!qty || Number(qty) < 1) setQty(1); }}
-              className="w-9 text-center font-bold text-gray-800 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-              style={{ MozAppearance: 'textfield' }}/>
-            <button onClick={() => setQty(q => Number(q) + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
-          </div>
-          <button onClick={() => { onAdd(variant, numQty); setQty(1); }}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
-            เพิ่ม
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+        <ChevronDown size={18}
+          className={`text-gray-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}/>
+      </button>
 
-/* ── Variant card (multi-spec product) ─────────────────────────────────── */
-const VariantCard: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
-  const [qty, setQty] = useState<number | string>(1);
-  const numQty = Number(qty) || 1;
+      {isExpanded && (
+        <div className="border-t border-gray-100 px-4 pt-3 pb-4 space-y-4">
+          {fields.map(({ key, label }, fieldIdx) => {
+            const prevSelected = fields.slice(0, fieldIdx).every(f => selectedAttrs[f.key]);
+            if (!prevSelected) return null;
+            // hide this row if it hasn't been chosen yet AND an exact match is already determined
+            if (exactVariant && !selectedAttrs[key]) return null;
+            const pool = variants.filter(v =>
+              fields.slice(0, fieldIdx).every(f => String(v[f.key] ?? '') === selectedAttrs[f.key])
+            );
+            const options = [...new Set(pool.map(v => String(v[key] ?? '')).filter(Boolean))];
+            return (
+              <div key={key}>
+                {fieldIdx > 0 && <p className="text-xs text-gray-400 font-semibold mb-2 uppercase tracking-wide">{label}</p>}
+                <div className="flex flex-wrap gap-2">
+                  {options.map(val => (
+                    <button key={val} onClick={() => handlePick(key, val)}
+                      className={`px-3.5 py-1.5 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
+                        selectedAttrs[key] === val
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200'
+                      }`}>
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
 
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-4 pt-4 pb-3">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-          {variant.size      && <p className="text-gray-500">ขนาด <span className="font-bold text-gray-900">{variant.size}</span></p>}
-          {variant.thickness && <p className="text-gray-500">หนา <span className="font-bold text-gray-900">{variant.thickness}</span></p>}
-          {variant.weight    && <p className="text-gray-500">น้ำหนัก <span className="font-bold text-gray-900">{variant.weight}</span></p>}
+          {exactVariant && (
+            <div className="pt-1 border-t border-gray-100">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                {exactVariant.hole      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{exactVariant.hole}</strong></span>}
+                {exactVariant.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{exactVariant.thickness}</strong></span>}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-orange-500">{exactVariant.price}฿</span>
+                <div className="flex items-center gap-2">
+                  <QtyControl qty={qty} setQty={setQty}/>
+                  <button onClick={() => { onAdd(exactVariant, Number(qty) || 1); setQty(1); handleToggle(); }}
+                    className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                    เพิ่ม
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <span className="text-2xl font-black text-orange-500">{variant.price}฿</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
-            <button onClick={() => setQty(q => Math.max(1, Number(q) - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
-            <input type="number" min="1" value={qty}
-              onChange={e => { const v = e.target.value; if (v === '') setQty(''); else { const n = parseInt(v,10); if (!isNaN(n) && n > 0) setQty(n); }}}
-              onBlur={() => { if (!qty || Number(qty) < 1) setQty(1); }}
-              className="w-9 text-center font-bold text-gray-800 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-              style={{ MozAppearance: 'textfield' }}/>
-            <button onClick={() => setQty(q => Number(q) + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
-          </div>
-          <button onClick={() => { onAdd(variant, numQty); setQty(1); }}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
-            เพิ่ม
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

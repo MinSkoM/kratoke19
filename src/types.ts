@@ -6,8 +6,8 @@ export interface Product {
   thickness: string;
   color: string;
   weight: string;
+  hole: string;
   price: number;
-  image: string;
 }
 
 export interface CartItem extends Product {
