@@ -1,24 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --font-family-sans: 'Sarabun', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Prompt', 'Sarabun', system-ui, -apple-system, sans-serif;
+
+  --color-brand-navy:  #142D95;
+  --color-brand-blue:  #6A9DF7;
+  --color-brand-yellow: #FCEF74;
+  --color-brand-gold:  #E3CE54;
 }
 
 body {
-  font-family: 'Sarabun', system-ui, -apple-system, sans-serif;
+  font-family: 'Prompt', 'Sarabun', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  background-color: #F5F7FF;
 }
 
 @layer components {
   .input-field {
     @apply w-full px-4 py-4 text-base bg-white border border-gray-200 rounded-2xl
-           focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none
-           transition-all placeholder:text-gray-300;
+           focus:outline-none transition-all placeholder:text-gray-300;
+    &:focus { box-shadow: 0 0 0 2px #6A9DF7; border-color: transparent; }
   }
   .spec-label {
     @apply text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5;
   }
   .spec-value {
     @apply text-sm font-black text-gray-900 leading-tight;
+  }
+  .btn-primary {
+    @apply bg-[#142D95] text-white font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
+  }
+  .btn-yellow {
+    @apply bg-[#FCEF74] text-[#142D95] font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
   }
 }

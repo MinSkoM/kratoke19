@@ -44,12 +44,13 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
   return (
     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm mb-3">
+        {variant.detail    && <p className="text-gray-500">รายละเอียด: <span className="text-gray-900 font-bold">{variant.detail}</span></p>}
         {variant.size      && <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>}
         {variant.thickness && <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>}
         {variant.weight    && <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>}
       </div>
       <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200">
-        <span className="text-2xl font-black text-orange-500">{variant.price}฿</span>
+        <span className="text-2xl font-black text-[#142D95]">{variant.price}฿</span>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
             <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
@@ -57,7 +58,7 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
             <button onClick={() => setQty(q => q + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
           </div>
           <button onClick={() => { onAdd(variant, qty); setQty(1); }}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+            className="bg-[#E3CE54] text-[#142D95] px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
             เพิ่ม
           </button>
         </div>
@@ -80,6 +81,7 @@ const SingleSearchCard: FC<{ group: { name: string; category: string; variants: 
           <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded-full mb-1.5 ${theme.badge}`}>{group.category}</span>
           <h3 className="text-base font-bold text-gray-900 leading-tight mb-2">{group.name}</h3>
           <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-sm">
+            {v.detail    && <p className="text-gray-500">รายละเอียด: <span className="font-bold text-gray-800">{v.detail}</span></p>}
             {v.size      && <p className="text-gray-500">ขนาด: <span className="font-bold text-gray-800">{v.size}</span></p>}
             {v.thickness && <p className="text-gray-500">หนา: <span className="font-bold text-gray-800">{v.thickness}</span></p>}
             {v.weight    && <p className="text-gray-500">น้ำหนัก: <span className="font-bold text-gray-800">{v.weight}</span></p>}
@@ -87,7 +89,7 @@ const SingleSearchCard: FC<{ group: { name: string; category: string; variants: 
         </div>
       </div>
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <span className="text-2xl font-black text-orange-500">{v.price}฿</span>
+        <span className="text-2xl font-black text-[#142D95]">{v.price}฿</span>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
             <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
@@ -95,7 +97,7 @@ const SingleSearchCard: FC<{ group: { name: string; category: string; variants: 
             <button onClick={() => setQty(q => q + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
           </div>
           <button onClick={() => { onAdd(v, qty); setQty(1); }}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+            className="bg-[#E3CE54] text-[#142D95] px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
             เพิ่ม
           </button>
         </div>
@@ -168,7 +170,7 @@ const AppContent: FC = () => {
           const mData = await mRes.json();
           const pData = await pRes.json();
           if (mData.isMember) { setIsRegistered(true); setMemberInfo(mData.data); }
-          if (pData.status === 'success') setProducts(pData.data);
+          if (pData.status === 'success') setProducts(pData.data.filter((p: Product) => p.price));
         } catch (e) { console.error('GAS:', e); }
       } catch (e) { console.error('LIFF:', e); setIsLiffReady(true); }
       finally { setIsLoading(false); }
@@ -244,7 +246,7 @@ const AppContent: FC = () => {
                     { type: 'box', layout: 'vertical', margin: 'xxl', spacing: 'sm', contents: cart.map(item => ({
                       type: 'box', layout: 'horizontal',
                       contents: [
-                        { type: 'text', text: `${item.name}${[item.size, item.thickness].filter(Boolean).map(s=>`[${s}]`).join('')} x${item.quantity}`, size: 'sm', color: '#555555', flex: 1, wrap: true },
+                        { type: 'text', text: `${item.name}${[item.detail, item.size, item.thickness].filter(Boolean).map(s=>`[${s}]`).join('')} x${item.quantity}`, size: 'sm', color: '#555555', flex: 1, wrap: true },
                         { type: 'text', text: `฿${item.price * item.quantity}`, size: 'sm', color: '#111111', align: 'end', flex: 0 },
                       ],
                     }))},
@@ -284,13 +286,13 @@ const AppContent: FC = () => {
   }, [filteredProducts]);
 
   return (
-    <div className="font-sans bg-slate-50 min-h-screen pb-24 overflow-x-hidden">
+    <div className="font-sans bg-[#F5F7FF] min-h-screen pb-24 overflow-x-hidden">
 
       {/* Loading overlay */}
       {isLoading && (
         <div className="fixed inset-0 bg-white/95 z-[60] flex flex-col items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"/>
+            <div className="w-12 h-12 border-4 border-[#6A9DF7]/30 border-t-[#142D95] rounded-full animate-spin"/>
             <p className="text-base font-semibold text-gray-500">กำลังโหลด...</p>
           </div>
         </div>
@@ -301,46 +303,46 @@ const AppContent: FC = () => {
         <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-5" onClick={() => setShowRegPrompt(false)}>
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-xs text-center" onClick={e => e.stopPropagation()}>
             <div className="text-5xl mb-4">🛒</div>
-            <h3 className="text-xl font-black text-gray-900 mb-2">ลงทะเบียนก่อนนะคะ</h3>
+            <h3 className="text-xl font-black text-gray-900 mb-2">กรุณาลงทะเบียนก่อนสั่งซื้อ</h3>
             <p className="text-sm text-gray-500 mb-6 leading-relaxed">กรุณากรอกข้อมูลในหน้า "ข้อมูลฉัน" ก่อนเพิ่มสินค้าลงตะกร้าครับ</p>
             <div className="flex gap-3">
               <button onClick={() => setShowRegPrompt(false)}
                 className="flex-1 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl text-base">ปิด</button>
               <button onClick={() => { setShowRegPrompt(false); navigate('/register'); }}
-                className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-2xl text-base shadow-sm active:scale-95 transition-transform">ลงทะเบียน</button>
+                className="flex-[2] py-4 bg-[#142D95] text-white font-black rounded-2xl text-base shadow-sm active:scale-95 transition-transform">ลงทะเบียน</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-white sticky top-0 z-40 border-b border-gray-100">
+      <header className="bg-[#142D95] sticky top-0 z-40 shadow-md">
         <div className="max-w-md mx-auto flex items-center px-4 py-3 gap-3">
           {/* Avatar */}
           <div className="relative shrink-0">
             {userProfile?.pictureUrl
-              ? <img src={userProfile.pictureUrl} alt="avatar" className="w-9 h-9 rounded-full ring-2 ring-blue-100"/>
-              : <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center"><User size={18} className="text-blue-400"/></div>}
-            {isRegistered && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"/>}
+              ? <img src={userProfile.pictureUrl} alt="avatar" className="w-9 h-9 rounded-full ring-2 ring-[#FCEF74]/60"/>
+              : <div className="w-9 h-9 rounded-full bg-[#6A9DF7]/30 flex items-center justify-center"><User size={18} className="text-[#FCEF74]"/></div>}
+            {isRegistered && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#142D95]"/>}
           </div>
 
           {/* User name */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{userProfile?.displayName || 'กำลังโหลด...'}</p>
-            <p className={`text-xs font-medium leading-tight ${isRegistered ? 'text-green-500' : 'text-orange-400'}`}>
+            <p className="text-sm font-semibold text-white truncate leading-tight">{userProfile?.displayName || 'กำลังโหลด...'}</p>
+            <p className={`text-xs font-medium leading-tight ${isRegistered ? 'text-green-400' : 'text-[#FCEF74]'}`}>
               {isRegistered ? 'สมาชิกยืนยันแล้ว' : 'ยังไม่ได้ลงทะเบียน'}
             </p>
           </div>
 
           {/* Brand */}
-          <span className="text-sm font-black text-blue-600 tracking-widest">KRATOKE</span>
+          <span className="text-sm font-black text-[#FCEF74] tracking-widest">KRATOKE</span>
 
           {/* Cart */}
           <button onClick={() => setShowCart(true)}
-            className="relative w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform shrink-0">
-            <ShoppingCart size={20} className="text-white"/>
+            className="relative w-10 h-10 bg-[#FCEF74] rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform shrink-0">
+            <ShoppingCart size={20} className="text-[#142D95]"/>
             {totalQty > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[11px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#142D95] text-[#FCEF74] text-[11px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">
                 {totalQty}
               </span>
             )}
@@ -358,7 +360,7 @@ const AppContent: FC = () => {
             <input
               type="text"
               placeholder="ค้นหาสินค้า หรือ รหัส..."
-              className="w-full pl-11 pr-11 py-3.5 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder:text-gray-300 transition-all"
+              className="w-full pl-11 pr-11 py-3.5 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6A9DF7] focus:border-transparent placeholder:text-gray-300 transition-all"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -410,7 +412,7 @@ const AppContent: FC = () => {
       {isLiffReady && (
         <div className="fixed bottom-0 left-0 right-0 z-40 pb-safe">
           <div className="max-w-md mx-auto px-4 pb-3">
-            <nav className="bg-white rounded-3xl shadow-lg border border-gray-100 flex items-center px-2 py-2">
+            <nav className="bg-[#142D95] rounded-3xl shadow-lg flex items-center px-2 py-2">
               {[
                 { to: '/menu',     icon: ShoppingCart, label: 'สั่งสินค้า',  onClick: () => setSearchTerm('') },
                 { to: '/history',  icon: HistoryIcon,  label: 'ประวัติ',     onClick: undefined },
@@ -419,8 +421,8 @@ const AppContent: FC = () => {
                 <Link key={to} to={to} onClick={onClick}
                   className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl gap-1 transition-all ${
                     isActive(to)
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'bg-[#FCEF74] text-[#142D95] shadow-sm'
+                      : 'text-[#6A9DF7] hover:text-white'
                   }`}>
                   <Icon size={22}/>
                   <span className="text-xs font-bold">{label}</span>

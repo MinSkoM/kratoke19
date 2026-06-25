@@ -11,8 +11,8 @@ interface MenuProps {
 }
 
 const VARIANT_FIELDS: { key: keyof Product; label: string }[] = [
+  { key: 'detail',    label: 'รายละเอียด' },
   { key: 'size',      label: 'ขนาด' },
-  { key: 'hole',      label: 'ขนาด' },
   { key: 'thickness', label: 'ความหนา' },
 ];
 
@@ -100,7 +100,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         <div>
           <div className="flex items-center gap-2 mb-4">
             <button onClick={() => { setSelectedGroup(null); setExpandedName(null); }}
-              className="flex items-center gap-1.5 bg-white border border-gray-200 text-blue-600 font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0">
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[#142D95] font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0">
               <ArrowLeft size={15}/> ย้อนกลับ
             </button>
             <span className="text-sm font-semibold text-gray-600">กลุ่ม {selectedGroup}</span>
@@ -133,7 +133,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
 const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => void }> = ({ qty, setQty }) => (
   <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
     <button onClick={() => setQty(Math.max(1, Number(qty) - 1))}
-      className="px-3 py-2 text-gray-400 active:text-blue-600 transition-colors">
+      className="px-3 py-2 text-gray-400 active:text-[#142D95] transition-colors">
       <Minus size={14}/>
     </button>
     <input type="number" min="1" value={qty}
@@ -142,7 +142,7 @@ const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => voi
       className="w-8 text-center font-bold text-gray-800 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
       style={{ MozAppearance: 'textfield' }}/>
     <button onClick={() => setQty(Number(qty) + 1)}
-      className="px-3 py-2 text-gray-400 active:text-blue-600 transition-colors">
+      className="px-3 py-2 text-gray-400 active:text-[#142D95] transition-colors">
       <Plus size={14}/>
     </button>
   </div>
@@ -202,18 +202,18 @@ const ProductCard: FC<{
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-base leading-snug mb-2">{first.name}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {first.detail    && <span className="text-sm text-gray-500">รายละเอียด <strong className="text-gray-800">{first.detail}</strong></span>}
               {first.size      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{first.size}</strong></span>}
-              {first.hole      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{first.hole}</strong></span>}
               {first.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{first.thickness}</strong></span>}
             </div>
           </div>
         </div>
         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-          <span className="text-2xl font-black text-orange-500">{first.price}฿</span>
+          {first.price ? <span className="text-2xl font-black text-[#142D95]">{first.price}฿</span> : <span/>}
           <div className="flex items-center gap-2">
             <QtyControl qty={qty} setQty={setQty}/>
             <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+              className="bg-[#E3CE54] text-[#142D95] px-4 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
               เพิ่ม
             </button>
           </div>
@@ -232,7 +232,7 @@ const ProductCard: FC<{
           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-snug">{name}</p>
-          <p className="text-sm text-blue-500 font-semibold mt-1">
+          <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
             {isExpanded ? 'กำลังเลือก...' : `${variants.length} ตัวเลือก • กดเพื่อเลือก`}
           </p>
         </div>
@@ -259,7 +259,7 @@ const ProductCard: FC<{
                     <button key={val} onClick={() => handlePick(key, val)}
                       className={`px-3.5 py-1.5 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
                         selectedAttrs[key] === val
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          ? 'bg-[#142D95] text-white border-[#142D95] shadow-sm'
                           : 'bg-white text-gray-600 border-gray-200'
                       }`}>
                       {val}
@@ -273,15 +273,15 @@ const ProductCard: FC<{
           {exactVariant && (
             <div className="pt-1 border-t border-gray-100">
               <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
-                {exactVariant.hole      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{exactVariant.hole}</strong></span>}
+                {exactVariant.size      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{exactVariant.size}</strong></span>}
                 {exactVariant.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{exactVariant.thickness}</strong></span>}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-orange-500">{exactVariant.price}฿</span>
+                {exactVariant.price ? <span className="text-2xl font-black text-[#142D95]">{exactVariant.price}฿</span> : <span/>}
                 <div className="flex items-center gap-2">
                   <QtyControl qty={qty} setQty={setQty}/>
                   <button onClick={() => { onAdd(exactVariant, Number(qty) || 1); setQty(1); handleToggle(); }}
-                    className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                    className="bg-[#E3CE54] text-[#142D95] px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
                     เพิ่ม
                   </button>
                 </div>

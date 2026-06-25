@@ -2,11 +2,11 @@ export interface Product {
   id: string;
   category: string;
   name: string;
-  size: string;
+  detail: string;
   thickness: string;
   color: string;
   weight: string;
-  hole: string;
+  size: string;
   price: number;
 }
 
