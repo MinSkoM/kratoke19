@@ -1,1 +1,1 @@
-export const fmt = (n: number) => n.toLocaleString('en-US');
+export const fmt = (n: number) => `${n.toLocaleString('en-US')} บาท`;
