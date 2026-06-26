@@ -230,7 +230,9 @@ const AppContent: FC = () => {
       });
       const data = JSON.parse(await res.text());
       if (data.status === 'success') {
-        if (liff.isInClient()) {
+        const inClient = liff.isInClient();
+        if (!inClient) alert('DEBUG: isInClient = false — ข้อความจะไม่ถูกส่ง');
+        if (inClient) {
           try {
             await liff.sendMessages([{
               type: 'flex', altText: `บิลสั่งซื้อ ${data.orderId}`,
