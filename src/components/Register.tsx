@@ -58,8 +58,12 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
               </Field>
 
               <Field label="เบอร์โทรศัพท์" icon="📞">
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                  className="input-field" placeholder="08X-XXX-XXXX" required/>
+                <input type="tel" value={phone}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, '');
+                    setPhone(v ? (v.startsWith('0') ? v : '0' + v) : '');
+                  }}
+                  className="input-field" placeholder="08X-XXX-XXXX" maxLength={10} required/>
               </Field>
 
               <Field label="ที่อยู่จัดส่ง / สาขา" icon="📍">
