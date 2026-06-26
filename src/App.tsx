@@ -5,6 +5,7 @@ import liff from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
 import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, X } from 'lucide-react';
 import { getProductImage } from './utils/productImage';
+import { fmt } from './utils/fmt';
 
 import Menu from './components/Menu';
 import Register from './components/Register';
@@ -50,7 +51,7 @@ const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) =
         {variant.weight    && <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>}
       </div>
       <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200">
-        <span className="text-2xl font-black text-[#142D95]">{variant.price}฿</span>
+        <span className="text-2xl font-black text-[#142D95]">{fmt(variant.price)}</span>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
             <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
@@ -89,7 +90,7 @@ const SingleSearchCard: FC<{ group: { name: string; category: string; variants: 
         </div>
       </div>
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <span className="text-2xl font-black text-[#142D95]">{v.price}฿</span>
+        <span className="text-2xl font-black text-[#142D95]">{fmt(v.price)}</span>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
             <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
@@ -247,13 +248,13 @@ const AppContent: FC = () => {
                       type: 'box', layout: 'horizontal',
                       contents: [
                         { type: 'text', text: `${item.name}${[item.detail, item.size, item.thickness].filter(Boolean).map(s=>`[${s}]`).join('')} x${item.quantity}`, size: 'sm', color: '#555555', flex: 1, wrap: true },
-                        { type: 'text', text: `฿${item.price * item.quantity}`, size: 'sm', color: '#111111', align: 'end', flex: 0 },
+                        { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 0 },
                       ],
                     }))},
                     { type: 'separator', margin: 'xxl' },
                     { type: 'box', layout: 'horizontal', margin: 'md', contents: [
                       { type: 'text', text: 'ยอดรวมทั้งสิ้น', size: 'sm', color: '#555555' },
-                      { type: 'text', text: `฿${cartTotal}`, size: 'lg', color: '#ff0000', align: 'end', weight: 'bold' },
+                      { type: 'text', text: fmt(cartTotal), size: 'lg', color: '#ff0000', align: 'end', weight: 'bold' },
                     ]},
                   ],
                 },

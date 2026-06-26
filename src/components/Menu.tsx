@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import { Product } from '../types';
 import { ChevronDown, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
 import { getProductImage } from '../utils/productImage';
+import { fmt } from '../utils/fmt';
 
 interface MenuProps {
   products: Product[];
@@ -209,7 +210,7 @@ const ProductCard: FC<{
           </div>
         </div>
         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-          {first.price ? <span className="text-2xl font-black text-[#142D95]">{first.price}฿</span> : <span/>}
+          {first.price ? <span className="text-2xl font-black text-[#142D95]">{fmt(first.price)}</span> : <span/>}
           <div className="flex items-center gap-2">
             <QtyControl qty={qty} setQty={setQty}/>
             <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); }}
@@ -277,7 +278,7 @@ const ProductCard: FC<{
                 {exactVariant.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{exactVariant.thickness}</strong></span>}
               </div>
               <div className="flex items-center justify-between">
-                {exactVariant.price ? <span className="text-2xl font-black text-[#142D95]">{exactVariant.price}฿</span> : <span/>}
+                {exactVariant.price ? <span className="text-2xl font-black text-[#142D95]">{fmt(exactVariant.price)}</span> : <span/>}
                 <div className="flex items-center gap-2">
                   <QtyControl qty={qty} setQty={setQty}/>
                   <button onClick={() => { onAdd(exactVariant, Number(qty) || 1); setQty(1); handleToggle(); }}

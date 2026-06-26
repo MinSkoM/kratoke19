@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { CartItem } from '../types';
 import { X, MapPin, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { fmt } from '../utils/fmt';
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -90,7 +91,7 @@ const CartSummary: FC<CartSummaryProps> = ({
             {/* Total */}
             <div className="flex justify-between items-center mb-4">
               <span className="text-base font-bold text-gray-600">ยอดสุทธิ</span>
-              <span className="text-3xl font-black text-orange-500">{cartTotal}฿</span>
+              <span className="text-3xl font-black text-orange-500">{fmt(cartTotal)}</span>
             </div>
 
             {/* Checkout button */}
@@ -131,10 +132,10 @@ const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: numb
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{item.name}</p>
         {specs.length > 0 && <p className="text-xs text-blue-500 font-medium mt-0.5">[{specs.join(', ')}]</p>}
-        <p className="text-xs text-gray-400 mt-0.5">{item.price}฿/ชิ้น</p>
+        <p className="text-xs text-gray-400 mt-0.5">{fmt(item.price)}/ชิ้น</p>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-sm font-black text-orange-500">{item.price * item.quantity}฿</p>
+        <p className="text-sm font-black text-orange-500">{fmt(item.price * item.quantity)}</p>
         <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
           <button onClick={() => updateQuantity(item.id, -1)}
             className="px-2.5 py-1.5 text-gray-400 active:text-red-500 transition-colors">
