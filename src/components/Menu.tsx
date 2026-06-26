@@ -150,7 +150,7 @@ const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => voi
 );
 
 /* ── Product card ───────────────────────────────────────────────────────── */
-const ProductCard: FC<{
+export const ProductCard: FC<{
   name: string;
   variants: Product[];
   isExpanded: boolean;
@@ -192,33 +192,44 @@ const ProductCard: FC<{
 
   const handleToggle = () => { setSelectedAttrs({}); setQty(1); onToggle(); };
 
-  /* ── Single-variant ── */
+  /* ── Single-variant: same compact collapsed row as multi ── */
   if (isSingle) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex gap-3.5 p-4 items-start">
+        <button onClick={handleToggle}
+          className="w-full flex items-center gap-3.5 p-4 text-left active:bg-gray-50 transition-colors">
           <img src={getProductImage(first)} alt={first.name}
             className="w-[60px] h-[60px] object-cover rounded-xl shrink-0 bg-gray-100"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-base leading-snug">{first.name}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+            <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
+              {isExpanded ? 'กำลังเลือก...' : fmt(first.price)}
+            </p>
+          </div>
+          <ChevronDown size={18}
+            className={`text-gray-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}/>
+        </button>
+
+        {isExpanded && (
+          <div className="border-t border-gray-100 px-4 pt-3 pb-4">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
               {first.detail    && <span className="text-sm text-gray-500">รายละเอียด <strong className="text-gray-800">{first.detail}</strong></span>}
               {first.size      && <span className="text-sm text-gray-500">ขนาด <strong className="text-gray-800">{first.size}</strong></span>}
               {first.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{first.thickness}</strong></span>}
             </div>
-            <div className="flex items-center justify-between mt-3">
-              {first.price ? <span className="text-2xl font-black text-[#142D95]">{fmt(first.price)}</span> : <span/>}
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-black text-[#142D95]">{fmt(first.price)}</span>
               <div className="flex items-center gap-2">
                 <QtyControl qty={qty} setQty={setQty}/>
-                <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); }}
-                  className="bg-[#E3CE54] text-[#142D95] px-4 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); handleToggle(); }}
+                  className="bg-[#E3CE54] text-[#142D95] px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
                   เพิ่ม
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }

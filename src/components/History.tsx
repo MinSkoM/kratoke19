@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { Order } from '../types';
 import { Package, Clock, Truck, CheckCircle, AlertCircle } from 'lucide-react';
+import { fmt } from '../utils/fmt';
 
 interface HistoryProps { orders: Order[]; isLoading: boolean; }
 
@@ -40,12 +41,22 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
             {/* Items */}
             <div className="space-y-2">
               {Array.isArray(order.items)
-                ? order.items.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-baseline text-sm">
-                      <span className="text-gray-700 flex-1 pr-2 truncate">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                      <span className="font-bold text-orange-500 whitespace-nowrap">{item.price * item.quantity}฿</span>
-                    </div>
-                  ))
+                ? order.items.map((item: any) => {
+                    const specs = [
+                      item.detail && item.detail,
+                      item.size && `ขนาด ${item.size}`,
+                      item.thickness && `หนา ${item.thickness}`,
+                    ].filter(Boolean) as string[];
+                    return (
+                      <div key={item.id} className="flex justify-between items-start text-sm gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-gray-700">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+                          {specs.length > 0 && <p className="text-xs text-[#6A9DF7] mt-0.5">{specs.join(' · ')}</p>}
+                        </div>
+                        <span className="font-bold text-orange-500 whitespace-nowrap shrink-0">{fmt(item.price * item.quantity)}</span>
+                      </div>
+                    );
+                  })
                 : <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{order.items as any}</p>
               }
             </div>
@@ -53,7 +64,7 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
             {/* Total */}
             <div className="flex justify-between items-center border-t border-dashed border-gray-200 mt-4 pt-3">
               <span className="text-sm text-gray-500 font-medium">ยอดรวม ({order.shippingMethod})</span>
-              <span className="text-2xl font-black text-orange-500">{order.total}฿</span>
+              <span className="text-2xl font-black text-orange-500">{fmt(order.total)}</span>
             </div>
           </div>
         </div>

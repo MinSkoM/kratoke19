@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { CartItem } from '../types';
-import { X, MapPin, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, MapPin, Plus, Minus, Trash2, ShoppingBag, Edit3, Check } from 'lucide-react';
 import { fmt } from '../utils/fmt';
 
 interface CartSummaryProps {
@@ -14,13 +14,19 @@ interface CartSummaryProps {
   handleCheckout: () => void;
   userAddress?: string;
   updateQuantity: (id: string, delta: number) => void;
+  onAddressUpdate?: (addr: string) => void;
 }
 
 const CartSummary: FC<CartSummaryProps> = ({
   cart, cartTotal, deliveryMethod, setDeliveryMethod,
-  setShowCart, isRegistered, handleCheckout, userAddress, updateQuantity,
+  setShowCart, isRegistered, handleCheckout, userAddress, updateQuantity, onAddressUpdate,
 }) => {
-  const canCheckout = cart.length > 0 && !(deliveryMethod === 'จัดส่ง' && !userAddress);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [localAddress, setLocalAddress] = useState(userAddress ?? '');
+
+  useEffect(() => { setLocalAddress(userAddress ?? ''); }, [userAddress]);
+
+  const canCheckout = cart.length > 0 && !(deliveryMethod === 'จัดส่ง' && !localAddress);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center backdrop-blur-sm"
@@ -36,7 +42,7 @@ const CartSummary: FC<CartSummaryProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <ShoppingBag size={20} className="text-blue-600"/>
+            <ShoppingBag size={20} className="text-[#142D95]"/>
             <h2 className="text-lg font-black text-gray-900">ตะกร้าสินค้า</h2>
           </div>
           <button onClick={() => setShowCart(false)}
@@ -63,10 +69,10 @@ const CartSummary: FC<CartSummaryProps> = ({
               <p className="text-sm font-bold text-gray-600 mb-2">วิธีรับสินค้า</p>
               <div className="grid grid-cols-2 gap-2">
                 {(['รับที่ร้าน', 'จัดส่ง'] as const).map(m => (
-                  <button key={m} onClick={() => setDeliveryMethod(m)}
+                  <button key={m} onClick={() => { setDeliveryMethod(m); setIsEditingAddress(false); }}
                     className={`py-3 rounded-2xl text-base font-bold border-2 transition-all ${
                       deliveryMethod === m
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        ? 'bg-[#142D95] text-white border-[#142D95] shadow-sm'
                         : 'bg-white text-gray-500 border-gray-200'
                     }`}>
                     {m}
@@ -75,16 +81,42 @@ const CartSummary: FC<CartSummaryProps> = ({
               </div>
             </div>
 
-            {/* Address display */}
+            {/* Address confirm/edit when จัดส่ง */}
             {deliveryMethod === 'จัดส่ง' && (
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex gap-3 items-start mb-4">
-                <MapPin size={18} className="text-blue-500 mt-0.5 shrink-0"/>
-                <div>
-                  <p className="text-xs font-bold text-blue-700 mb-0.5">จัดส่งไปที่</p>
-                  <p className="text-sm text-gray-700 leading-snug">
-                    {userAddress ?? <span className="text-red-500 font-semibold">ยังไม่มีที่อยู่ กรุณาอัปเดตในหน้าข้อมูลฉัน</span>}
-                  </p>
+              <div className="bg-[#F0F4FF] border border-[#6A9DF7]/40 rounded-2xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-black text-[#142D95]">ยืนยันที่อยู่จัดส่ง</p>
+                  {!isEditingAddress && localAddress && (
+                    <button onClick={() => setIsEditingAddress(true)}
+                      className="flex items-center gap-1 text-xs text-[#6A9DF7] font-bold">
+                      <Edit3 size={12}/> แก้ไข
+                    </button>
+                  )}
                 </div>
+                {!localAddress ? (
+                  <p className="text-sm text-red-500 font-semibold">ยังไม่มีที่อยู่ กรุณาอัปเดตในหน้าข้อมูลฉัน</p>
+                ) : isEditingAddress ? (
+                  <div>
+                    <textarea value={localAddress} onChange={e => setLocalAddress(e.target.value)}
+                      className="w-full text-sm text-gray-700 bg-white border-2 border-[#6A9DF7] rounded-xl p-3 resize-none focus:outline-none"
+                      rows={3}/>
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => { setIsEditingAddress(false); setLocalAddress(userAddress ?? ''); }}
+                        className="flex-1 py-2 text-sm font-bold text-gray-500 bg-gray-100 rounded-xl">
+                        ยกเลิก
+                      </button>
+                      <button onClick={() => { setIsEditingAddress(false); onAddressUpdate?.(localAddress); }}
+                        className="flex-[2] flex items-center justify-center gap-1.5 py-2 text-sm font-bold text-white bg-[#142D95] rounded-xl">
+                        <Check size={14}/> บันทึก
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <MapPin size={15} className="text-[#6A9DF7] mt-0.5 shrink-0"/>
+                    <p className="text-sm text-gray-700 leading-snug">{localAddress}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -125,13 +157,17 @@ const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: numb
     if (!input || Number(input) < 1) { setInput(1); if (item.quantity !== 1) updateQuantity(item.id, 1 - item.quantity); }
   };
 
-  const specs = [item.size, item.thickness].filter(Boolean);
+  const specs = [
+    item.detail && item.detail,
+    item.size && `ขนาด ${item.size}`,
+    item.thickness && `หนา ${item.thickness}`,
+  ].filter(Boolean) as string[];
 
   return (
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 gap-3">
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{item.name}</p>
-        {specs.length > 0 && <p className="text-xs text-blue-500 font-medium mt-0.5">[{specs.join(', ')}]</p>}
+        <p className="font-semibold text-gray-900 text-sm leading-tight">{item.name}</p>
+        {specs.length > 0 && <p className="text-xs text-[#6A9DF7] font-medium mt-0.5">{specs.join(' · ')}</p>}
         <p className="text-xs text-gray-400 mt-0.5">{fmt(item.price)}/ชิ้น</p>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -145,7 +181,7 @@ const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: numb
             className="w-8 text-center text-sm font-bold text-gray-800 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
             style={{ MozAppearance: 'textfield' }}/>
           <button onClick={() => updateQuantity(item.id, 1)}
-            className="px-2.5 py-1.5 text-gray-400 active:text-blue-600 transition-colors">
+            className="px-2.5 py-1.5 text-gray-400 active:text-[#142D95] transition-colors">
             <Plus size={14}/>
           </button>
         </div>

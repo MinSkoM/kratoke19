@@ -3,11 +3,10 @@ import type { FC } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import liff from '@line/liff';
 import { Product, CartItem, UserProfile, Order } from './types';
-import { ShoppingCart, User, History as HistoryIcon, Loader2, Search, Plus, Minus, X } from 'lucide-react';
-import { getProductImage } from './utils/productImage';
+import { ShoppingCart, User, History as HistoryIcon, Search, X } from 'lucide-react';
 import { fmt } from './utils/fmt';
 
-import Menu from './components/Menu';
+import Menu, { ProductCard } from './components/Menu';
 import Register from './components/Register';
 import History from './components/History';
 import CartSummary from './components/CartSummary';
@@ -15,119 +14,7 @@ import CartSummary from './components/CartSummary';
 const LIFF_ID = import.meta.env.VITE_LIFF_ID as string;
 const GAS_URL = import.meta.env.VITE_GAS_URL as string;
 
-export const getCategoryTheme = (category: string = '') => {
-  const themes = [
-    { bg: 'bg-blue-50',    border: 'border-blue-200',   icon: 'bg-blue-100 text-blue-600',   badge: 'bg-blue-100 text-blue-700' },
-    { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'bg-emerald-100 text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
-    { bg: 'bg-orange-50',  border: 'border-orange-200',  icon: 'bg-orange-100 text-orange-600',  badge: 'bg-orange-100 text-orange-700' },
-    { bg: 'bg-purple-50',  border: 'border-purple-200',  icon: 'bg-purple-100 text-purple-600',  badge: 'bg-purple-100 text-purple-700' },
-    { bg: 'bg-pink-50',    border: 'border-pink-200',    icon: 'bg-pink-100 text-pink-600',    badge: 'bg-pink-100 text-pink-700' },
-    { bg: 'bg-teal-50',    border: 'border-teal-200',    icon: 'bg-teal-100 text-teal-600',    badge: 'bg-teal-100 text-teal-700' },
-    { bg: 'bg-red-50',     border: 'border-red-200',     icon: 'bg-red-100 text-red-600',     badge: 'bg-red-100 text-red-700' },
-    { bg: 'bg-indigo-50',  border: 'border-indigo-200',  icon: 'bg-indigo-100 text-indigo-600',  badge: 'bg-indigo-100 text-indigo-700' },
-    { bg: 'bg-cyan-50',    border: 'border-cyan-200',    icon: 'bg-cyan-100 text-cyan-600',    badge: 'bg-cyan-100 text-cyan-700' },
-    { bg: 'bg-rose-50',    border: 'border-rose-200',    icon: 'bg-rose-100 text-rose-600',    badge: 'bg-rose-100 text-rose-700' },
-    { bg: 'bg-amber-50',   border: 'border-amber-200',   icon: 'bg-amber-100 text-amber-600',   badge: 'bg-amber-100 text-amber-700' },
-    { bg: 'bg-lime-50',    border: 'border-lime-200',    icon: 'bg-lime-100 text-lime-600',    badge: 'bg-lime-100 text-lime-700' },
-    { bg: 'bg-violet-50',  border: 'border-violet-200',  icon: 'bg-violet-100 text-violet-600',  badge: 'bg-violet-100 text-violet-700' },
-    { bg: 'bg-fuchsia-50', border: 'border-fuchsia-200', icon: 'bg-fuchsia-100 text-fuchsia-600', badge: 'bg-fuchsia-100 text-fuchsia-700' },
-    { bg: 'bg-sky-50',     border: 'border-sky-200',     icon: 'bg-sky-100 text-sky-600',     badge: 'bg-sky-100 text-sky-700' },
-    { bg: 'bg-green-50',   border: 'border-green-200',   icon: 'bg-green-100 text-green-600',   badge: 'bg-green-100 text-green-700' },
-  ];
-  let hash = 0;
-  for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
-  return themes[Math.abs(hash) % themes.length];
-};
 
-/* ── Search result cards ──────────────────────────────────────────────── */
-const SearchVariantItem: FC<{ variant: Product; onAdd: (p: Product, q: number) => void }> = ({ variant, onAdd }) => {
-  const [qty, setQty] = useState(1);
-  return (
-    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm mb-3">
-        {variant.detail    && <p className="text-gray-500">รายละเอียด: <span className="text-gray-900 font-bold">{variant.detail}</span></p>}
-        {variant.size      && <p className="text-gray-500">ขนาด: <span className="text-gray-900 font-bold">{variant.size}</span></p>}
-        {variant.thickness && <p className="text-gray-500">หนา: <span className="text-gray-900 font-bold">{variant.thickness}</span></p>}
-        {variant.weight    && <p className="text-gray-500">น้ำหนัก: <span className="text-gray-900 font-bold">{variant.weight}</span></p>}
-      </div>
-      <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200">
-        <span className="text-2xl font-black text-[#142D95]">{fmt(variant.price)}</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
-            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
-            <span className="w-8 text-center font-bold text-gray-800 text-base">{qty}</span>
-            <button onClick={() => setQty(q => q + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
-          </div>
-          <button onClick={() => { onAdd(variant, qty); setQty(1); }}
-            className="bg-[#E3CE54] text-[#142D95] px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
-            เพิ่ม
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SingleSearchCard: FC<{ group: { name: string; category: string; variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
-  const [qty, setQty] = useState(1);
-  const v = group.variants[0];
-  const theme = getCategoryTheme(group.category);
-  return (
-    <div className={`bg-white rounded-2xl border ${theme.border} overflow-hidden shadow-sm`}>
-      <div className="flex gap-4 p-4 items-start">
-        <img src={getProductImage(v)} alt={group.name}
-          className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-100"
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        <div className="flex-1 min-w-0">
-          <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded-full mb-1.5 ${theme.badge}`}>{group.category}</span>
-          <h3 className="text-base font-bold text-gray-900 leading-tight mb-2">{group.name}</h3>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-sm">
-            {v.detail    && <p className="text-gray-500">รายละเอียด: <span className="font-bold text-gray-800">{v.detail}</span></p>}
-            {v.size      && <p className="text-gray-500">ขนาด: <span className="font-bold text-gray-800">{v.size}</span></p>}
-            {v.thickness && <p className="text-gray-500">หนา: <span className="font-bold text-gray-800">{v.thickness}</span></p>}
-            {v.weight    && <p className="text-gray-500">น้ำหนัก: <span className="font-bold text-gray-800">{v.weight}</span></p>}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <span className="text-2xl font-black text-[#142D95]">{fmt(v.price)}</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden">
-            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-400 active:text-blue-600"><Minus size={15}/></button>
-            <span className="w-8 text-center font-bold text-gray-800 text-base">{qty}</span>
-            <button onClick={() => setQty(q => q + 1)} className="px-3 py-2 text-gray-400 active:text-blue-600"><Plus size={15}/></button>
-          </div>
-          <button onClick={() => { onAdd(v, qty); setQty(1); }}
-            className="bg-[#E3CE54] text-[#142D95] px-4 py-2.5 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
-            เพิ่ม
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const GroupedSearchCard: FC<{ group: { name: string; category: string; variants: Product[] }; onAdd: (p: Product, q: number) => void }> = ({ group, onAdd }) => {
-  const theme = getCategoryTheme(group.category);
-  if (group.variants.length === 1) return <SingleSearchCard group={group} onAdd={onAdd} />;
-  return (
-    <div className={`bg-white rounded-2xl border ${theme.border} overflow-hidden shadow-sm`}>
-      <div className="flex gap-4 p-4 items-center">
-        <img src={getProductImage(group.variants[0])} alt={group.name}
-          className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-100"
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        <div>
-          <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded-full mb-1.5 ${theme.badge}`}>{group.category}</span>
-          <h3 className="text-base font-bold text-gray-900">{group.name}</h3>
-          <p className="text-sm text-gray-400 mt-0.5">{group.variants.length} ตัวเลือก</p>
-        </div>
-      </div>
-      <div className={`px-4 pb-4 space-y-3`}>
-        {group.variants.map(v => <SearchVariantItem key={v.id} variant={v} onAdd={onAdd} />)}
-      </div>
-    </div>
-  );
-};
 
 /* ── Main app ─────────────────────────────────────────────────────────── */
 const AppContent: FC = () => {
@@ -147,6 +34,7 @@ const AppContent: FC = () => {
   const [showRegPrompt, setShowRegPrompt] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'รับที่ร้าน' | 'จัดส่ง'>('รับที่ร้าน');
   const [searchTerm,  setSearchTerm]    = useState('');
+  const [expandedSearchName, setExpandedSearchName] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -201,6 +89,15 @@ const AppContent: FC = () => {
     finally { setIsLoading(false); }
   };
 
+  const handleAddressUpdate = async (newAddress: string) => {
+    if (!memberInfo || !userProfile) return;
+    const updated = { ...memberInfo, address: newAddress };
+    setMemberInfo(updated);
+    try {
+      await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'register', payload: { lineId: userProfile.userId, ...updated } }) });
+    } catch { /* non-critical */ }
+  };
+
   const addToCart = (product: Product, quantity = 1) => {
     if (!isRegistered) { setShowRegPrompt(true); return; }
     setCart(prev => {
@@ -247,12 +144,19 @@ const AppContent: FC = () => {
                     { type: 'box', layout: 'vertical', margin: 'xxl', spacing: 'sm', contents: cart.map(item => ({
                       type: 'box', layout: 'horizontal',
                       contents: [
-                        { type: 'text', text: `${item.name}${[item.detail, item.size, item.thickness].filter(Boolean).map(s=>`[${s}]`).join('')} x${item.quantity}`, size: 'sm', color: '#555555', flex: 1, wrap: true },
-                        { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 0 },
+                        { type: 'text', wrap: true, flex: 4, size: 'sm', color: '#555555',
+                          text: [item.name, item.detail, item.size && `ขนาด: ${item.size}`, item.thickness && `หนา: ${item.thickness}`].filter(Boolean).join(' '),
+                        },
+                        { type: 'text', text: `x${item.quantity}`, size: 'sm', color: '#333333', align: 'center', flex: 1 },
+                        { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 2 },
                       ],
                     }))},
                     { type: 'separator', margin: 'xxl' },
                     { type: 'box', layout: 'horizontal', margin: 'md', contents: [
+                      { type: 'text', text: 'วิธีรับสินค้า', size: 'sm', color: '#555555' },
+                      { type: 'text', text: deliveryMethod, size: 'sm', color: '#111111', align: 'end', weight: 'bold' },
+                    ]},
+                    { type: 'box', layout: 'horizontal', margin: 'sm', contents: [
                       { type: 'text', text: 'ยอดรวมทั้งสิ้น', size: 'sm', color: '#555555' },
                       { type: 'text', text: fmt(cartTotal), size: 'lg', color: '#ff0000', align: 'end', weight: 'bold' },
                     ]},
@@ -385,7 +289,12 @@ const AppContent: FC = () => {
                     <p className="text-xs text-gray-400">{groupedSearch.length} กลุ่ม</p>
                   </div>
                   {groupedSearch.length > 0
-                    ? groupedSearch.map((g, i) => <GroupedSearchCard key={i} group={g} onAdd={addToCart}/>)
+                    ? groupedSearch.map(g => (
+                        <ProductCard key={g.name} name={g.name} variants={g.variants}
+                          isExpanded={expandedSearchName === g.name}
+                          onToggle={() => setExpandedSearchName(prev => prev === g.name ? null : g.name)}
+                          onAdd={(p, q) => { addToCart(p, q); setExpandedSearchName(null); }}/>
+                      ))
                     : <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
                         <Search size={40} className="mx-auto text-gray-300 mb-3"/>
                         <p className="text-gray-400 text-lg">ไม่พบสินค้าที่ค้นหา</p>
@@ -406,7 +315,8 @@ const AppContent: FC = () => {
         <CartSummary cart={cart} cartTotal={cartTotal} deliveryMethod={deliveryMethod}
           setDeliveryMethod={setDeliveryMethod} setShowCart={setShowCart}
           isRegistered={isRegistered} handleCheckout={handleCheckout}
-          userAddress={memberInfo?.address} updateQuantity={updateQuantity}/>
+          userAddress={memberInfo?.address} updateQuantity={updateQuantity}
+          onAddressUpdate={handleAddressUpdate}/>
       )}
 
       {/* Bottom nav */}
