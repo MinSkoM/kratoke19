@@ -141,16 +141,20 @@ const AppContent: FC = () => {
                     { type: 'text', text: 'รายการสั่งซื้อ', weight: 'bold', size: 'xl', margin: 'md' },
                     { type: 'text', text: `รหัส: ${data.orderId}`, size: 'xs', color: '#aaaaaa', wrap: true },
                     { type: 'separator', margin: 'xxl' },
-                    { type: 'box', layout: 'vertical', margin: 'xxl', spacing: 'sm', contents: cart.map(item => ({
-                      type: 'box', layout: 'horizontal',
-                      contents: [
-                        { type: 'text', wrap: true, flex: 4, size: 'sm', color: '#555555',
-                          text: [item.name, item.detail, item.size && `ขนาด: ${item.size}`, item.thickness && `หนา: ${item.thickness}`].filter(Boolean).join(' '),
-                        },
-                        { type: 'text', text: `x${item.quantity}`, size: 'sm', color: '#333333', align: 'center', flex: 1 },
-                        { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 2 },
-                      ],
-                    }))},
+                    { type: 'box', layout: 'vertical', margin: 'xxl', spacing: 'sm', contents: cart.map(item => {
+                      const specs = [item.detail, item.size && `ขนาด: ${item.size}`, item.thickness && `หนา: ${item.thickness}`].filter(Boolean).join(' ');
+                      return {
+                        type: 'box', layout: 'horizontal', alignItems: 'flex-start',
+                        contents: [
+                          { type: 'box', layout: 'vertical', flex: 4, contents: [
+                            { type: 'text', text: item.name, size: 'sm', color: '#333333', wrap: true, weight: 'bold' },
+                            ...(specs ? [{ type: 'text', text: specs, size: 'xs', color: '#888888', wrap: true }] : []),
+                          ]},
+                          { type: 'text', text: `x${item.quantity}`, size: 'sm', color: '#555555', align: 'center', flex: 1 },
+                          { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 2 },
+                        ],
+                      };
+                    })},
                     { type: 'separator', margin: 'xxl' },
                     { type: 'box', layout: 'horizontal', margin: 'md', contents: [
                       { type: 'text', text: 'วิธีรับสินค้า', size: 'sm', color: '#555555' },
