@@ -42,18 +42,15 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
             <div className="space-y-2">
               {Array.isArray(order.items)
                 ? order.items.map((item: any) => {
-                    const specs = [
-                      item.detail && item.detail,
-                      item.size && `ขนาด ${item.size}`,
-                      item.thickness && `หนา ${item.thickness}`,
-                    ].filter(Boolean) as string[];
+                    const specs = [item.detail, item.size && `ขนาด: ${item.size}`, item.thickness && `หนา: ${item.thickness}`].filter(Boolean).join(' ');
                     return (
-                      <div key={item.id} className="flex justify-between items-start text-sm gap-2">
+                      <div key={item.id} className="flex items-start gap-2 text-sm">
                         <div className="flex-1 min-w-0">
-                          <span className="text-gray-700">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                          {specs.length > 0 && <p className="text-xs text-[#6A9DF7] mt-0.5">{specs.join(' · ')}</p>}
+                          <p className="font-bold text-gray-800">{item.name}</p>
+                          {specs && <p className="text-xs text-gray-400 mt-0.5">{specs}</p>}
                         </div>
-                        <span className="font-bold text-orange-500 whitespace-nowrap shrink-0">{fmt(item.price * item.quantity)}</span>
+                        <span className="text-gray-500 whitespace-nowrap shrink-0 w-8 text-center">x{item.quantity}</span>
+                        <span className="font-bold text-orange-500 whitespace-nowrap shrink-0 text-right w-24">{fmt(item.price * item.quantity)}</span>
                       </div>
                     );
                   })

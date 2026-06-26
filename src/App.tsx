@@ -121,10 +121,11 @@ const AppContent: FC = () => {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
+      const gasCart = cart.map(item => ({ ...item, name: `${item.id} ${item.name}` }));
       const res  = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'submitOrder', payload: { lineId: userProfile?.userId, cart, totalQuantity: totalQty, totalPrice: cartTotal, shippingMethod: deliveryMethod } }),
+        body: JSON.stringify({ action: 'submitOrder', payload: { lineId: userProfile?.userId, cart: gasCart, totalQuantity: totalQty, totalPrice: cartTotal, shippingMethod: deliveryMethod } }),
       });
       const data = JSON.parse(await res.text());
       if (data.status === 'success') {
