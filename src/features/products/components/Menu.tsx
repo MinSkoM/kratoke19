@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import type { FC } from 'react';
-import { Product } from '../types';
+import { Product } from '../../../types';
 import { ChevronDown, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
-import { getProductImage } from '../utils/productImage';
-import { fmt } from '../utils/fmt';
+import { getProductImage } from '../../../utils/productImage';
+import { fmt } from '../../../utils/fmt';
 
 interface MenuProps {
   products: Product[];

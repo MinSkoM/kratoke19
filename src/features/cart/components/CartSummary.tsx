@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
-import { CartItem } from '../types';
+import { CartItem } from '../../../types';
 import { X, MapPin, Plus, Minus, Trash2, ShoppingBag, Edit3, Check } from 'lucide-react';
-import { fmt } from '../utils/fmt';
+import { fmt } from '../../../utils/fmt';
 
 interface CartSummaryProps {
   cart: CartItem[];

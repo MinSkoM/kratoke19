@@ -1,7 +1,7 @@
 import type { FC } from 'react';
-import { Order } from '../types';
+import { Order } from '../../../types';
 import { Package, Clock, Truck, CheckCircle, AlertCircle } from 'lucide-react';
-import { fmt } from '../utils/fmt';
+import { fmt } from '../../../utils/fmt';
 
 interface HistoryProps { orders: Order[]; isLoading: boolean; }
 
