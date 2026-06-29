@@ -77,7 +77,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
           onClick={() => saveEstimateImage(result)}
           className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform"
         >
-          <Download size={18} /> บันทึกเป็นรูป
+          <Download size={18} /> บันทึกใบเสนอราคา
         </button>
       )}
     </div>
@@ -93,14 +93,15 @@ function formatSpecs(product: PricingResultData['items'][number]['product']): st
 }
 
 async function saveEstimateImage(result: PricingResultData) {
-  const blob = await createEstimateImageBlob(result);
-  const file = new File([blob], 'kratoke-estimate.png', { type: 'image/png' });
+  const quoteNo = getNextQuoteNo();
+  const blob = await createEstimateImageBlob(result, quoteNo);
+  const file = new File([blob], 'ใบเสนอราคา_เหล็กกระโทก.png', { type: 'image/png' });
 
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
       files: [file],
       title: 'Kratoke Steel Shop',
-      text: 'รายการคำนวณราคา',
+      text: 'ใบเสนอราคา',
     });
     return;
   }
@@ -108,84 +109,118 @@ async function saveEstimateImage(result: PricingResultData) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'kratoke-estimate.png';
+  link.download = 'ใบเสนอราคา_เหล็กกระโทก.png';
   link.click();
   URL.revokeObjectURL(url);
 }
 
-async function createEstimateImageBlob(result: PricingResultData): Promise<Blob> {
-  const width = 1080;
-  const padding = 56;
-  const rowHeight = 128;
-  const headerHeight = 190;
-  const totalHeight = 160;
-  const height = headerHeight + result.items.length * rowHeight + totalHeight + padding;
+async function createEstimateImageBlob(result: PricingResultData, quoteNo: string): Promise<Blob> {
+  const width = 1600;
+  const margin = 72;
+  const rowHeight = 66;
+  const headerHeight = 330;
+  const footerHeight = 300;
+  const height = Math.max(980, headerHeight + result.items.length * rowHeight + footerHeight);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Cannot create image.');
 
-  ctx.fillStyle = '#F5F7FF';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = '#142D95';
-  roundRect(ctx, padding, padding, width - padding * 2, height - padding * 2, 36);
-  ctx.fill();
+  ctx.fillStyle = '#0F172A';
+  ctx.textBaseline = 'alphabetic';
 
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, padding + 18, padding + 18, width - padding * 2 - 36, height - padding * 2 - 36, 28);
-  ctx.fill();
+  const dateText = formatThaiDate(new Date());
+  const rightBlockX = width - 540;
 
-  let y = padding + 76;
-  ctx.fillStyle = '#142D95';
-  ctx.font = '900 42px Prompt, Sarabun, sans-serif';
-  ctx.fillText('KRATOKE STEEL SHOP', padding + 52, y);
-  y += 46;
-  ctx.fillStyle = '#6B7280';
-  ctx.font = '700 28px Prompt, Sarabun, sans-serif';
-  ctx.fillText('รายการคำนวณราคา', padding + 52, y);
-  y += 52;
+  ctx.font = font(30, 700);
+  ctx.fillText('บริษัท กระโทก จำกัด', margin, 82);
+  ctx.font = font(25, 400);
+  ctx.fillText('222 หมู่ 10 ต.โชคชัย อ.โชคชัย จ.นครราชสีมา 30190', margin, 122);
+  ctx.fillText('โทร. 081-9678272, 081-9678273, 086-6491969', margin, 160);
 
-  result.items.forEach((item, index) => {
-    const rowY = y + index * rowHeight;
-    ctx.fillStyle = index % 2 === 0 ? '#F8FAFC' : '#FFFFFF';
-    roundRect(ctx, padding + 36, rowY - 24, width - padding * 2 - 72, rowHeight - 14, 18);
-    ctx.fill();
-
-    ctx.fillStyle = '#111827';
-    ctx.font = '900 28px Prompt, Sarabun, sans-serif';
-    ctx.fillText(item.product.name, padding + 64, rowY + 10);
-
-    ctx.fillStyle = '#2563EB';
-    ctx.font = '700 23px Prompt, Sarabun, sans-serif';
-    ctx.fillText(`${formatSpecs(item.product)} · x${item.quantity}`, padding + 64, rowY + 48);
-
-    ctx.fillStyle = '#F97316';
-    ctx.font = '900 30px Prompt, Sarabun, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(fmt(item.subtotal), width - padding - 64, rowY + 28);
-    ctx.textAlign = 'left';
-  });
-
-  y += result.items.length * rowHeight;
-  ctx.strokeStyle = '#CBD5E1';
-  ctx.setLineDash([12, 10]);
-  ctx.beginPath();
-  ctx.moveTo(padding + 52, y - 22);
-  ctx.lineTo(width - padding - 52, y - 22);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = '#374151';
-  ctx.font = '900 32px Prompt, Sarabun, sans-serif';
-  ctx.fillText('ยอดรวมสินค้า', padding + 64, y + 46);
-  ctx.fillStyle = '#F97316';
-  ctx.font = '900 48px Prompt, Sarabun, sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText(fmt(result.total), width - padding - 64, y + 50);
+  ctx.font = font(38, 700);
+  drawLetterSpacedText(ctx, 'ใบเสนอราคา', width - 310, 92, 8, 'center');
   ctx.textAlign = 'left';
 
+  ctx.font = font(25, 500);
+  drawMetaRow(ctx, 'เลขที่', quoteNo, rightBlockX, 154);
+  drawMetaRow(ctx, 'วันที่', dateText, rightBlockX, 194);
+  drawMetaRow(ctx, 'พนักงานขาย', 'ออนไลน์', rightBlockX, 234);
+
+  ctx.font = font(25, 500);
+  ctx.fillText('ลูกค้า', margin, 226);
+  ctx.font = font(25, 400);
+  ctx.fillText('................................................................................................', margin + 86, 226);
+  
+  const tableTop = headerHeight;
+  const tableLeft = margin;
+  const tableRight = width - margin;
+  drawRule(ctx, tableLeft, tableTop - 46, tableRight, '#111111', 1.2);
+  drawRule(ctx, tableLeft, tableTop + 22, tableRight, '#111111', 1.2);
+
+  const col = {
+    no: tableLeft + 28,
+    desc: tableLeft + 150,
+    qty: width - 600,
+    unit: width - 390,
+    amount: width - 105,
+  };
+
+  ctx.fillStyle = '#111111';
+  ctx.font = font(25, 600);
+  ctx.fillText('ลำดับ', col.no, tableTop);
+  ctx.fillText('รหัสสินค้า/รายละเอียด', col.desc, tableTop);
+  ctx.textAlign = 'right';
+  ctx.fillText('จำนวน', col.qty, tableTop);
+  ctx.fillText('ราคาต่อหน่วย', col.unit, tableTop);
+  ctx.fillText('จำนวนเงิน', col.amount, tableTop);
+  ctx.textAlign = 'left';
+
+  let y = tableTop + 78;
+  result.items.forEach((item, index) => {
+    const desc = `${item.product.name} ${formatSpecs(item.product)}`;
+    const rowTop = y - 38;
+    if (index % 2 === 1) {
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(tableLeft, rowTop, tableRight - tableLeft, rowHeight);
+    }
+    drawRule(ctx, tableLeft, rowTop + rowHeight, tableRight, '#E5E7EB', 0.8);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = font(25, 400);
+    ctx.fillText(String(index + 1), col.no + 18, y);
+    drawFittedText(ctx, desc, col.desc, y, col.qty - col.desc - 52, 25, 400);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${item.quantity.toFixed(2)} ชิ้น`, col.qty, y);
+    ctx.fillText(moneyText(item.unitPrice), col.unit, y);
+    ctx.fillText(moneyText(item.subtotal), col.amount, y);
+    ctx.textAlign = 'left';
+    y += rowHeight;
+  });
+
+  const footerLineY = height - 250;
+  drawRule(ctx, tableLeft, footerLineY, tableRight, '#111111', 1.2);
+
+  ctx.fillStyle = '#111111';
+  ctx.font = font(24, 400);
+  ctx.fillText(`(${thaiBahtText(result.total)})`, margin + 26, footerLineY + 54);
+  ctx.fillText('หมายเหตุ  ราคานี้รวมภาษีมูลค่าเพิ่มแล้ว', margin + 26, footerLineY + 100);
+
+  const totalBoxX = width - 560;
+  const totalBoxY = footerLineY + 26;
+  ctx.font = font(26, 600);
+  ctx.fillText('ยอดรวมสุทธิ', totalBoxX + 24, totalBoxY + 48);
+  ctx.textAlign = 'right';
+  ctx.fillText(moneyText(result.total), width - margin, totalBoxY + 48);
+  ctx.textAlign = 'left';
+
+  ctx.font = font(24, 400);
+  ctx.fillText('เสนอราคาในนาม  บริษัท กระโทก จำกัด', totalBoxX, totalBoxY + 118);
+  
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => {
       if (blob) resolve(blob);
@@ -194,14 +229,111 @@ async function createEstimateImageBlob(result: PricingResultData): Promise<Blob>
   });
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+function getNextQuoteNo(): string {
+  const year = String(new Date().getFullYear() + 543).slice(-2);
+  const storageKey = `kratoke_quote_seq_${year}`;
+  const current = Number(localStorage.getItem(storageKey) || '0');
+  const next = current + 1;
+  localStorage.setItem(storageKey, String(next));
+  return `K${year}-${String(next).padStart(4, '0')}`;
+}
+
+function drawRule(ctx: CanvasRenderingContext2D, x1: number, y: number, x2: number, color: string, lineWidth: number) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + width, y, x + width, y + height, radius);
-  ctx.arcTo(x + width, y + height, x, y + height, radius);
-  ctx.arcTo(x, y + height, x, y, radius);
-  ctx.arcTo(x, y, x + width, y, radius);
-  ctx.closePath();
+  ctx.moveTo(x1, y);
+  ctx.lineTo(x2, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawFittedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, fontSize: number, weight = 400) {
+  ctx.font = font(fontSize, weight);
+  let nextText = text;
+  while (ctx.measureText(nextText).width > maxWidth && nextText.length > 12) {
+    nextText = `${nextText.slice(0, -2)}…`;
+  }
+  ctx.fillText(nextText, x, y);
+}
+
+function font(size: number, weight: number): string {
+  return `${weight} ${size}px Tahoma, Arial, "Sarabun", "Prompt", sans-serif`;
+}
+
+function drawMetaRow(ctx: CanvasRenderingContext2D, label: string, value: string, x: number, y: number) {
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x, y);
+  ctx.fillText(':', x + 140, y);
+  ctx.fillText(value, x + 170, y);
+}
+
+function drawLetterSpacedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  spacing: number,
+  align: CanvasTextAlign = 'left',
+) {
+  const widths = Array.from(text).map(char => ctx.measureText(char).width);
+  const totalWidth = widths.reduce((sum, width) => sum + width, 0) + spacing * Math.max(0, widths.length - 1);
+  let currentX = align === 'center' ? x - totalWidth / 2 : align === 'right' ? x - totalWidth : x;
+  Array.from(text).forEach((char, index) => {
+    ctx.fillText(char, currentX, y);
+    currentX += widths[index] + spacing;
+  });
+}
+
+function numberText(value: number): string {
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function moneyText(value: number): string {
+  return `${numberText(value)} บาท`;
+}
+
+const THAI_DIGITS = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+const THAI_PLACES = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน'];
+
+function thaiBahtText(value: number): string {
+  const safeValue = Math.max(0, Math.round(value * 100) / 100);
+  const baht = Math.floor(safeValue);
+  const satang = Math.round((safeValue - baht) * 100);
+  const bahtText = `${thaiNumberText(baht)}บาท`;
+  if (satang === 0) return `${bahtText}ถ้วน`;
+  return `${bahtText}${thaiNumberText(satang)}สตางค์`;
+}
+
+function thaiNumberText(value: number): string {
+  if (value === 0) return 'ศูนย์';
+  if (value >= 1_000_000) {
+    const millions = Math.floor(value / 1_000_000);
+    const remainder = value % 1_000_000;
+    return `${thaiNumberText(millions)}ล้าน${remainder ? thaiNumberText(remainder) : ''}`;
+  }
+
+  const digits = String(value).split('').map(Number);
+  const length = digits.length;
+  return digits.map((digit, index) => {
+    if (digit === 0) return '';
+    const place = length - index - 1;
+    if (place === 0 && digit === 1 && length > 1) return 'เอ็ด';
+    if (place === 1 && digit === 1) return 'สิบ';
+    if (place === 1 && digit === 2) return 'ยี่สิบ';
+    return `${THAI_DIGITS[digit]}${THAI_PLACES[place]}`;
+  }).join('');
+}
+
+function formatThaiDate(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear() + 543).slice(-2);
+  return `${day}/${month}/${year}`;
 }
 
 export default PricingResult;

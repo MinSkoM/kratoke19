@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { Product } from '../../../types';
 import { ChevronDown, ArrowLeft, Package, Plus, Minus } from 'lucide-react';
-import { getProductImage } from '../../../utils/productImage';
+import { getProductImage, handleProductImageError } from '../../../utils/productImage';
 import { fmt } from '../../../utils/fmt';
 
 interface MenuProps {
@@ -77,7 +77,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
                         {previews[i] && (
                           <img src={getProductImage(previews[i])} alt=""
                             className="w-full h-full object-cover"
-                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                            onError={handleProductImageError}/>
                         )}
                       </div>
                     ))}
@@ -200,7 +200,7 @@ export const ProductCard: FC<{
           className="w-full flex items-center gap-3.5 p-4 text-left active:bg-gray-50 transition-colors">
           <img src={getProductImage(first)} alt={first.name}
             className="w-[60px] h-[60px] object-cover rounded-xl shrink-0 bg-gray-100"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+            onError={handleProductImageError}/>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-base leading-snug">{first.name}</p>
             <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
@@ -241,7 +241,7 @@ export const ProductCard: FC<{
         className="w-full flex items-center gap-3.5 p-4 text-left active:bg-gray-50 transition-colors">
         <img src={getProductImage(first)} alt={name}
           className="w-[60px] h-[60px] object-cover rounded-xl shrink-0 bg-gray-100"
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+          onError={handleProductImageError}/>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-snug">{name}</p>
           <p className="text-sm text-[#6A9DF7] font-semibold mt-1">

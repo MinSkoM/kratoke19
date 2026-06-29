@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { ListFilter } from 'lucide-react';
+import { Check, ChevronDown, ListFilter, Search, X } from 'lucide-react';
 import type { Product } from '../../../types';
 import { fmt } from '../../../utils/fmt';
+import { getProductCategoryGroup, getVisibleCategoryGroups } from '../categoryGroups';
+import { searchProduct } from '../searchProducts';
 
 interface PriceCaptureListProps {
   products: Product[];
@@ -16,17 +18,34 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
     [products],
   );
   const [selectedName, setSelectedName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [detailFilter, setDetailFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
   const [thicknessFilter, setThicknessFilter] = useState('');
+  const [isNamePickerOpen, setIsNamePickerOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const activeName = selectedName || names[0] || '';
+  const activeName = selectedName;
+  const filteredNames = useMemo(
+    () => {
+      const query = searchTerm.trim();
+      if (!query) return names;
+      const matchedProducts = products.filter(product => searchProduct(product, query));
+      return Array.from(new Set(matchedProducts.map(product => product.name).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+    },
+    [names, products, searchTerm],
+  );
+  const selectableNames = filteredNames;
+  const visibleActiveName = selectableNames.includes(activeName) ? activeName : selectableNames[0] || '';
+  const groupedNames = useMemo(
+    () => getGroupedNames(products, selectableNames),
+    [products, selectableNames],
+  );
 
   const baseVariants = useMemo(
     () => products
-      .filter(product => product.name === activeName)
+      .filter(product => product.name === visibleActiveName)
       .sort((a, b) => a.id.localeCompare(b.id, 'th')),
-    [activeName, products],
+    [products, visibleActiveName],
   );
   const detailOptions = useMemo(() => uniqueValues(baseVariants, 'detail'), [baseVariants]);
   const sizeOptions = useMemo(() => uniqueValues(baseVariants, 'size'), [baseVariants]);
@@ -48,7 +67,7 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
     setSizeFilter('');
     setThicknessFilter('');
     setPage(0);
-  }, [activeName]);
+  }, [visibleActiveName]);
 
   useEffect(() => {
     setPage(0);
@@ -63,19 +82,95 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
           <ListFilter size={20} className="text-[#FCEF74]" />
           <h2 className="text-lg font-black">เช็กราคาตามชื่อสินค้า</h2>
         </div>
-        <p className="text-xs text-[#AFC7FF] mt-1">เลือกชื่อสินค้าเพื่อดูราคาทุกขนาดสำหรับแคปหน้าจอ</p>
+        <p className="text-xs text-[#AFC7FF] mt-1">ราคาสินค้าจากทางบริษัทอาจมีการเปลี่ยนแปลงได้ตามราคาตลาด</p>
       </div>
 
       <div className="p-4">
-        <select
-          value={activeName}
-          onChange={event => setSelectedName(event.target.value)}
-          className="input-field mb-4"
-        >
-          {names.map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+        <div className="relative mb-3">
+          <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="ค้นหาชื่อสินค้า..."
+            value={searchTerm}
+            onChange={event => {
+              setSearchTerm(event.target.value);
+              setIsNamePickerOpen(false);
+            }}
+            className="w-full pl-10 pr-10 py-3 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6A9DF7] placeholder:text-gray-300"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setIsNamePickerOpen(false);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"
+            >
+              <X size={14} className="text-gray-500" />
+            </button>
+          )}
+        </div>
+
+        <div className="relative mb-4">
+          <div className="flex items-center justify-between mb-1.5 px-0.5">
+            <label className="text-sm font-black text-gray-600">เลือกสินค้า</label>
+            <span className="text-xs font-bold text-gray-400">แตะเพื่อเปิดรายการ</span>
+          </div>
+          <button
+            type="button"
+            disabled={selectableNames.length === 0}
+            onClick={() => setIsNamePickerOpen(previous => !previous)}
+            className={`w-full flex items-stretch justify-between gap-3 overflow-hidden bg-white border-2 rounded-2xl shadow-sm text-left transition-all disabled:bg-gray-50 disabled:text-gray-300 ${
+              isNamePickerOpen ? 'border-[#142D95] ring-2 ring-[#6A9DF7]/20' : 'border-gray-200'
+            }`}
+          >
+            <span className={`flex-1 px-4 py-3.5 text-base font-black truncate ${visibleActiveName ? 'text-gray-900' : 'text-gray-300'}`}>
+              {visibleActiveName || 'เลือกสินค้า'}
+            </span>
+            <span className={`w-12 flex items-center justify-center border-l transition-colors ${
+              isNamePickerOpen ? 'bg-[#F0F4FF] border-[#6A9DF7]/40' : 'bg-gray-50 border-gray-200'
+            }`}>
+              <ChevronDown
+                size={22}
+                className={`text-[#142D95] shrink-0 transition-transform ${isNamePickerOpen ? 'rotate-180' : ''}`}
+              />
+            </span>
+          </button>
+
+          {isNamePickerOpen && selectableNames.length > 0 && (
+            <div className="absolute z-30 left-0 right-0 mt-2 max-h-80 overflow-y-auto rounded-2xl border-2 border-[#142D95]/20 bg-white shadow-2xl">
+              {groupedNames.map(group => (
+                <div key={group.id} className="border-b border-gray-100 last:border-0">
+                  <p className="sticky top-0 bg-[#F0F4FF] px-4 py-2 text-xs font-black text-[#142D95]">
+                    {group.title}
+                  </p>
+                  {group.names.map(name => {
+                    const isSelected = name === visibleActiveName;
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedName(name);
+                          setIsNamePickerOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left ${
+                          isSelected ? 'bg-[#F5F7FF]' : 'bg-white'
+                        }`}
+                      >
+                        <span className={`text-sm font-bold ${isSelected ? 'text-[#142D95]' : 'text-gray-800'}`}>
+                          {name}
+                        </span>
+                        {isSelected && <Check size={17} className="text-[#142D95] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="space-y-3 mb-4">
           {detailOptions.length > 1 && (
@@ -92,9 +187,9 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
         <div className="rounded-2xl border border-gray-100 overflow-hidden">
           <div className="bg-[#F0F4FF] px-4 py-3 flex items-center justify-between">
             <div>
-              <p className="text-base font-black text-[#142D95]">{activeName}</p>
+              <p className="text-base font-black text-[#142D95]">{visibleActiveName || 'เลือกสินค้า'}</p>
               <p className="text-xs font-semibold text-gray-400">
-                {variants.length} จาก {baseVariants.length} รายการ{pageCount > 1 ? ` · ชุด ${page + 1}/${pageCount}` : ''}
+                {visibleActiveName ? `${variants.length} จาก ${baseVariants.length} รายการ${pageCount > 1 ? ` · หน้า ${page + 1}/${pageCount}` : ''}` : 'กรุณาเลือกสินค้าเพื่อดูราคา'}
               </p>
             </div>
             <p className="text-xs font-bold text-gray-400">ราคา/ชิ้น</p>
@@ -108,7 +203,11 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {visibleVariants.length > 0 ? (
+            {!visibleActiveName ? (
+              <div className="px-4 py-8 text-center text-sm font-semibold text-gray-400">
+                กรุณาเลือกสินค้า
+              </div>
+            ) : visibleVariants.length > 0 ? (
               visibleVariants.map(product => (
                 <div key={product.id} className="grid grid-cols-[1.3fr_1fr_0.8fr_1fr] gap-2 px-3 py-2.5 items-center">
                   <p className="text-xs font-bold text-gray-900 leading-snug">{product.detail || '-'}</p>
@@ -138,7 +237,7 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
                     : 'bg-white text-gray-500 border-gray-200'
                 }`}
               >
-                ชุด {index + 1}
+                หน้า {index + 1}
               </button>
             ))}
           </div>
@@ -190,6 +289,21 @@ const FilterChips: FC<FilterChipsProps> = ({ label, value, options, onChange }) 
 
 function uniqueValues(products: Product[], key: 'detail' | 'size' | 'thickness'): string[] {
   return Array.from(new Set(products.map(product => product[key]).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+}
+
+function getGroupedNames(products: Product[], names: string[]) {
+  const nameSet = new Set(names);
+  return getVisibleCategoryGroups(products)
+    .map(group => ({
+      id: group.id,
+      title: group.title,
+      names: Array.from(new Set(
+        products
+          .filter(product => nameSet.has(product.name) && getProductCategoryGroup(product).id === group.id)
+          .map(product => product.name),
+      )).sort((a, b) => a.localeCompare(b, 'th')),
+    }))
+    .filter(group => group.names.length > 0);
 }
 
 export default PriceCaptureList;
