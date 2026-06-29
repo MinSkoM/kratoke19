@@ -14,7 +14,7 @@ const CAPTURE_PAGE_SIZE = 12;
 
 const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
   const names = useMemo(
-    () => Array.from(new Set(products.map(product => product.name).filter(Boolean))).sort(),
+    () => Array.from(new Set(products.map(product => stringValue(product.name)).filter(Boolean))).sort(compareThaiText),
     [products],
   );
   const [selectedName, setSelectedName] = useState('');
@@ -30,7 +30,7 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
       const query = searchTerm.trim();
       if (!query) return names;
       const matchedProducts = products.filter(product => searchProduct(product, query));
-      return Array.from(new Set(matchedProducts.map(product => product.name).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+      return Array.from(new Set(matchedProducts.map(product => stringValue(product.name)).filter(Boolean))).sort(compareThaiText);
     },
     [names, products, searchTerm],
   );
@@ -43,8 +43,8 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
 
   const baseVariants = useMemo(
     () => products
-      .filter(product => product.name === visibleActiveName)
-      .sort((a, b) => a.id.localeCompare(b.id, 'th')),
+      .filter(product => stringValue(product.name) === visibleActiveName)
+      .sort((a, b) => compareThaiText(stringValue(a.id), stringValue(b.id))),
     [products, visibleActiveName],
   );
   const detailOptions = useMemo(() => uniqueValues(baseVariants, 'detail'), [baseVariants]);
@@ -288,7 +288,7 @@ const FilterChips: FC<FilterChipsProps> = ({ label, value, options, onChange }) 
 );
 
 function uniqueValues(products: Product[], key: 'detail' | 'size' | 'thickness'): string[] {
-  return Array.from(new Set(products.map(product => product[key]).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+  return Array.from(new Set(products.map(product => stringValue(product[key])).filter(Boolean))).sort(compareThaiText);
 }
 
 function getGroupedNames(products: Product[], names: string[]) {
@@ -299,11 +299,19 @@ function getGroupedNames(products: Product[], names: string[]) {
       title: group.title,
       names: Array.from(new Set(
         products
-          .filter(product => nameSet.has(product.name) && getProductCategoryGroup(product).id === group.id)
-          .map(product => product.name),
-      )).sort((a, b) => a.localeCompare(b, 'th')),
+          .filter(product => nameSet.has(stringValue(product.name)) && getProductCategoryGroup(product).id === group.id)
+          .map(product => stringValue(product.name)),
+      )).sort(compareThaiText),
     }))
     .filter(group => group.names.length > 0);
+}
+
+function stringValue(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+function compareThaiText(a: string, b: string): number {
+  return a.localeCompare(b, 'th');
 }
 
 export default PriceCaptureList;

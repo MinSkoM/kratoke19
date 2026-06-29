@@ -100,7 +100,7 @@ async function saveEstimateImage(result: PricingResultData) {
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
       files: [file],
-      title: 'Kratoke Steel Shop',
+      title: 'บริษัท กระโทก จำกัด',
       text: 'ใบเสนอราคา',
     });
     return;
