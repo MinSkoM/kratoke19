@@ -54,7 +54,7 @@ const AppShell: FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-black text-white truncate leading-tight">เครื่องคำนวณราคา</p>
-                <p className="text-xs font-semibold text-[#FCEF74] leading-tight">KRATOKE STEEL SHOP</p>
+                <p className="text-xs font-semibold text-[#FCEF74] leading-tight">โดย เหล็กกระโทก</p>
               </div>
             </>
           ) : (
@@ -74,8 +74,6 @@ const AppShell: FC = () => {
               </div>
             </>
           )}
-
-          <span className="text-sm font-black text-[#FCEF74] tracking-widest">KRATOKE</span>
 
           {!app.isPublicCalculator && (
             <button

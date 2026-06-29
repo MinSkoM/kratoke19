@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FC } from 'react';
 import { Check, ChevronDown, ListFilter, Search, X } from 'lucide-react';
 import type { Product } from '../../../types';
@@ -11,20 +11,21 @@ interface PriceCaptureListProps {
 }
 
 const CAPTURE_PAGE_SIZE = 12;
+const LAST_SELECTED_PRICE_CHECK_NAME_KEY = 'kratoke_price_check_last_name';
 
 const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
   const names = useMemo(
     () => Array.from(new Set(products.map(product => stringValue(product.name)).filter(Boolean))).sort(compareThaiText),
     [products],
   );
-  const [selectedName, setSelectedName] = useState('');
+  const [selectedName, setSelectedName] = useState(() => getStoredSelectedName());
   const [searchTerm, setSearchTerm] = useState('');
   const [detailFilter, setDetailFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
   const [thicknessFilter, setThicknessFilter] = useState('');
   const [isNamePickerOpen, setIsNamePickerOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const activeName = selectedName;
+  const selectedOptionRef = useRef<HTMLButtonElement | null>(null);
   const filteredNames = useMemo(
     () => {
       const query = searchTerm.trim();
@@ -35,7 +36,7 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
     [names, products, searchTerm],
   );
   const selectableNames = filteredNames;
-  const visibleActiveName = selectableNames.includes(activeName) ? activeName : selectableNames[0] || '';
+  const visibleActiveName = selectedName && (!searchTerm.trim() || selectableNames.includes(selectedName)) ? selectedName : '';
   const groupedNames = useMemo(
     () => getGroupedNames(products, selectableNames),
     [products, selectableNames],
@@ -61,6 +62,20 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
   );
   const pageCount = Math.max(1, Math.ceil(variants.length / CAPTURE_PAGE_SIZE));
   const visibleVariants = variants.slice(page * CAPTURE_PAGE_SIZE, (page + 1) * CAPTURE_PAGE_SIZE);
+
+  useEffect(() => {
+    if (selectedName && !names.includes(selectedName)) {
+      setSelectedName('');
+      localStorage.removeItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY);
+    }
+  }, [names, selectedName]);
+
+  useEffect(() => {
+    if (!isNamePickerOpen) return;
+    window.setTimeout(() => {
+      selectedOptionRef.current?.scrollIntoView({ block: 'center' });
+    }, 0);
+  }, [isNamePickerOpen, visibleActiveName]);
 
   useEffect(() => {
     setDetailFilter('');
@@ -151,15 +166,17 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
                       <button
                         key={name}
                         type="button"
+                        ref={isSelected ? selectedOptionRef : undefined}
                         onClick={() => {
                           setSelectedName(name);
+                          localStorage.setItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY, name);
                           setIsNamePickerOpen(false);
                         }}
                         className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left ${
-                          isSelected ? 'bg-[#F5F7FF]' : 'bg-white'
+                          isSelected ? 'bg-[#FFF4A8]' : 'bg-white'
                         }`}
                       >
-                        <span className={`text-sm font-bold ${isSelected ? 'text-[#142D95]' : 'text-gray-800'}`}>
+                        <span className={`text-sm font-bold ${isSelected ? 'text-gray-950' : 'text-gray-800'}`}>
                           {name}
                         </span>
                         {isSelected && <Check size={17} className="text-[#142D95] shrink-0" />}
@@ -312,6 +329,10 @@ function stringValue(value: unknown): string {
 
 function compareThaiText(a: string, b: string): number {
   return a.localeCompare(b, 'th');
+}
+
+function getStoredSelectedName(): string {
+  return localStorage.getItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY) || '';
 }
 
 export default PriceCaptureList;

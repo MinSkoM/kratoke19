@@ -29,6 +29,27 @@ export interface SubmitOrderResponse {
   orderId: string;
 }
 
+export interface SubmitQuotationItem {
+  id: string;
+  name: string;
+  detail?: string;
+  size?: string;
+  thickness?: string;
+  quantity: number;
+  price: number;
+}
+
+export interface SubmitQuotationPayload {
+  items: SubmitQuotationItem[];
+  totalQuantity: number;
+  totalPrice: number;
+}
+
+export interface SubmitQuotationResponse {
+  status: 'success';
+  quoteId: string;
+}
+
 interface StatusResponse<T> {
   status?: string;
   data?: T;
@@ -111,6 +132,25 @@ export async function submitOrder(payload: SubmitOrderPayload): Promise<SubmitOr
 
   if (!data.orderId) {
     throw new Error('Order response is missing orderId.');
+  }
+
+  return data;
+}
+
+export async function submitQuotation(payload: SubmitQuotationPayload): Promise<SubmitQuotationResponse> {
+  const data = assertStatusSuccess(
+    await parseJsonResponse<SubmitQuotationResponse & { error?: string }>(
+      await fetch(requireGasUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'submitQuotation', payload }),
+      }),
+    ),
+    'submitQuotation',
+  );
+
+  if (!data.quoteId) {
+    throw new Error('Quotation response is missing quoteId.');
   }
 
   return data;

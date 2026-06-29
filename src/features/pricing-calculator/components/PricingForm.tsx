@@ -66,7 +66,7 @@ const PricingForm: FC<PricingFormProps> = ({
         <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
           type="text"
-          placeholder="ค้นหาสินค้า หรือ รหัส..."
+          placeholder="ค้นหาชื่อสินค้า"
           value={searchTerm}
           onChange={event => {
             setSearchTerm(event.target.value);

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import type { FC } from 'react';
 import type { PricingResult as PricingResultData } from '../pricingTypes';
 import { fmt } from '../../../utils/fmt';
 import { Download, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { submitQuotation } from '../../../lib/gasClient';
 
 interface PricingResultProps {
   result: PricingResultData;
@@ -11,6 +13,20 @@ interface PricingResultProps {
 
 const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQuantity }) => {
   const hasItems = result.items.length > 0;
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveEstimate = async () => {
+    if (isSaving) return;
+
+    try {
+      setIsSaving(true);
+      await saveEstimateImage(result);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'ไม่สามารถบันทึกใบเสนอราคาได้');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-5">
@@ -46,14 +62,17 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
                 <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
                   <button
                     type="button"
+                    aria-label="ลดจำนวนสินค้า"
+                    disabled={item.quantity <= 1}
                     onClick={() => onUpdateQuantity(item.id, -1)}
-                    className="px-2.5 py-1.5 text-gray-400 active:text-red-500"
+                    className="px-2.5 py-1.5 text-gray-400 active:text-red-500 disabled:cursor-not-allowed disabled:text-gray-200 disabled:active:text-gray-200"
                   >
                     <Minus size={14} />
                   </button>
                   <span className="w-8 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
                   <button
                     type="button"
+                    aria-label="เพิ่มจำนวนสินค้า"
                     onClick={() => onUpdateQuantity(item.id, 1)}
                     className="px-2.5 py-1.5 text-gray-400 active:text-[#142D95]"
                   >
@@ -74,10 +93,11 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
       {hasItems && (
         <button
           type="button"
-          onClick={() => saveEstimateImage(result)}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform"
+          disabled={isSaving}
+          onClick={handleSaveEstimate}
+          className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform disabled:cursor-wait disabled:bg-gray-300 disabled:active:scale-100"
         >
-          <Download size={18} /> บันทึกใบเสนอราคา
+          <Download size={18} /> {isSaving ? 'กำลังบันทึก...' : 'บันทึกใบเสนอราคา'}
         </button>
       )}
     </div>
@@ -93,7 +113,19 @@ function formatSpecs(product: PricingResultData['items'][number]['product']): st
 }
 
 async function saveEstimateImage(result: PricingResultData) {
-  const quoteNo = getNextQuoteNo();
+  const { quoteId: quoteNo } = await submitQuotation({
+    items: result.items.map(item => ({
+      id: item.product.id,
+      name: item.product.name,
+      detail: item.product.detail,
+      size: item.product.size,
+      thickness: item.product.thickness,
+      quantity: item.quantity,
+      price: item.unitPrice,
+    })),
+    totalQuantity: result.items.reduce((sum, item) => sum + item.quantity, 0),
+    totalPrice: result.total,
+  });
   const blob = await createEstimateImageBlob(result, quoteNo);
   const file = new File([blob], 'ใบเสนอราคา_เหล็กกระโทก.png', { type: 'image/png' });
 
@@ -227,15 +259,6 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
       else reject(new Error('Cannot create image file.'));
     }, 'image/png');
   });
-}
-
-function getNextQuoteNo(): string {
-  const year = String(new Date().getFullYear() + 543).slice(-2);
-  const storageKey = `kratoke_quote_seq_${year}`;
-  const current = Number(localStorage.getItem(storageKey) || '0');
-  const next = current + 1;
-  localStorage.setItem(storageKey, String(next));
-  return `K${year}-${String(next).padStart(4, '0')}`;
 }
 
 function drawRule(ctx: CanvasRenderingContext2D, x1: number, y: number, x2: number, color: string, lineWidth: number) {
