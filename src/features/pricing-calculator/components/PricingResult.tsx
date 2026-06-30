@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import type { PricingResult as PricingResultData } from '../pricingTypes';
 import { fmt } from '../../../utils/fmt';
-import { Download, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { Download, Eye, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { submitQuotation } from '../../../lib/gasClient';
 
 interface PricingResultProps {
@@ -14,6 +14,8 @@ interface PricingResultProps {
 const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQuantity }) => {
   const hasItems = result.items.length > 0;
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const handleSaveEstimate = async () => {
     if (isSaving) return;
@@ -27,6 +29,30 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!hasItems || !isPreviewOpen) {
+      setPreviewUrl('');
+      return;
+    }
+
+    let nextUrl = '';
+    let isCancelled = false;
+    createEstimateImageBlob(result, getPreviewQuoteNo())
+      .then(blob => {
+        if (isCancelled) return;
+        nextUrl = URL.createObjectURL(blob);
+        setPreviewUrl(nextUrl);
+      })
+      .catch(() => {
+        if (!isCancelled) setPreviewUrl('');
+      });
+
+    return () => {
+      isCancelled = true;
+      if (nextUrl) URL.revokeObjectURL(nextUrl);
+    };
+  }, [hasItems, isPreviewOpen, result]);
 
   return (
     <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-5">
@@ -47,7 +73,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-black text-gray-900">{item.product.name}</p>
                 <p className="text-xs text-[#6A9DF7] font-semibold mt-0.5">
-                  {formatSpecs(item.product)} · {fmt(item.unitPrice)}/ชิ้น
+                  {formatSpecs(item.product)}
                 </p>
                 <p className="text-sm font-black text-orange-500 mt-1">{fmt(item.subtotal)}</p>
               </div>
@@ -91,14 +117,40 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
       </div>
 
       {hasItems && (
-        <button
-          type="button"
-          disabled={isSaving}
-          onClick={handleSaveEstimate}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform disabled:cursor-wait disabled:bg-gray-300 disabled:active:scale-100"
-        >
-          <Download size={18} /> {isSaving ? 'กำลังบันทึก...' : 'บันทึกใบเสนอราคา'}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(previous => !previous)}
+            className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#FFF4A8] text-[#142D95] text-base font-black shadow-sm active:scale-95 transition-transform"
+          >
+            <Eye size={18} /> {isPreviewOpen ? 'ซ่อนตัวอย่างใบเสนอราคา' : 'ดูตัวอย่างใบเสนอราคา'}
+          </button>
+
+          {isPreviewOpen && (
+            <div className="mt-3 rounded-2xl border border-gray-100 bg-gray-50 p-2">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="ตัวอย่างใบเสนอราคา"
+                  className="w-full rounded-xl bg-white shadow-sm"
+                />
+              ) : (
+                <div className="py-10 text-center text-sm font-semibold text-gray-400">
+                  กำลังสร้างตัวอย่าง...
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={handleSaveEstimate}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform disabled:cursor-wait disabled:bg-gray-300 disabled:active:scale-100"
+          >
+            <Download size={18} /> {isSaving ? 'กำลังบันทึก...' : 'บันทึกใบเสนอราคา'}
+          </button>
+        </>
       )}
     </div>
   );
@@ -144,6 +196,11 @@ async function saveEstimateImage(result: PricingResultData) {
   link.download = 'ใบเสนอราคา_เหล็กกระโทก.png';
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function getPreviewQuoteNo(): string {
+  const year = String(new Date().getFullYear()).slice(-2);
+  return `K${year}00000`;
 }
 
 async function createEstimateImageBlob(result: PricingResultData, quoteNo: string): Promise<Blob> {

@@ -163,6 +163,7 @@ export const ProductCard: FC<{
   const first    = variants[0];
   const fields   = useMemo(() => varyingFields(variants), [variants]);
   const isSingle = variants.length === 1;
+  const qtyNumber = Math.max(1, Number(qty) || 1);
 
   const filteredVariants = useMemo(() =>
     variants.filter(v =>
@@ -204,7 +205,7 @@ export const ProductCard: FC<{
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-base leading-snug">{first.name}</p>
             <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
-              {isExpanded ? 'กำลังเลือก...' : fmt(first.price)}
+              {isExpanded ? 'เลือกจำนวนด้านล่าง' : 'แตะเพื่อเลือกสินค้า'}
             </p>
           </div>
           <ChevronDown size={18}
@@ -219,7 +220,7 @@ export const ProductCard: FC<{
               {first.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{first.thickness}</strong></span>}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-black text-[#142D95]">{fmt(first.price)}</span>
+              <PriceStack unitPrice={first.price} quantity={qtyNumber} />
               <div className="flex items-center gap-2">
                 <QtyControl qty={qty} setQty={setQty}/>
                 <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); handleToggle(); }}
@@ -245,7 +246,7 @@ export const ProductCard: FC<{
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-snug">{name}</p>
           <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
-            {isExpanded ? 'กำลังเลือก...' : `${variants.length} ตัวเลือก • กดเพื่อเลือก`}
+            {isExpanded ? 'เลือกแบบและจำนวนด้านล่าง' : `${variants.length} ตัวเลือก • กดเพื่อเลือก`}
           </p>
         </div>
         <ChevronDown size={18}
@@ -289,7 +290,7 @@ export const ProductCard: FC<{
                 {exactVariant.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{exactVariant.thickness}</strong></span>}
               </div>
               <div className="flex items-center justify-between">
-                {exactVariant.price ? <span className="text-2xl font-black text-[#142D95]">{fmt(exactVariant.price)}</span> : <span/>}
+                {exactVariant.price ? <PriceStack unitPrice={exactVariant.price} quantity={qtyNumber} /> : <span/>}
                 <div className="flex items-center gap-2">
                   <QtyControl qty={qty} setQty={setQty}/>
                   <button onClick={() => { onAdd(exactVariant, Number(qty) || 1); setQty(1); handleToggle(); }}
@@ -305,5 +306,12 @@ export const ProductCard: FC<{
     </div>
   );
 };
+
+const PriceStack: FC<{ unitPrice: number; quantity: number }> = ({ unitPrice, quantity }) => (
+  <div>
+    <p className="text-2xl font-black text-[#142D95]">{fmt(unitPrice * quantity)}</p>
+    <p className="mt-0.5 text-xs font-semibold text-gray-400">ราคาต่อชิ้น {fmt(unitPrice)}</p>
+  </div>
+);
 
 export default Menu;

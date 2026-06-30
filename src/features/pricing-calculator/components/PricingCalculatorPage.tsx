@@ -28,7 +28,7 @@ const PricingCalculatorPage: FC<PricingCalculatorPageProps> = ({ products, isLoa
       <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-2 grid grid-cols-2 gap-2">
         {[
           { value: 'price-check' as const, label: 'เช็กราคา', icon: ListFilter },
-          { value: 'estimate' as const, label: 'คำนวณ', icon: Calculator },
+          { value: 'estimate' as const, label: 'คำนวณราคา', icon: Calculator },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;

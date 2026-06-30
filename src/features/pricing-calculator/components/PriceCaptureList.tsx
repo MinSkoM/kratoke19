@@ -101,90 +101,107 @@ const PriceCaptureList: FC<PriceCaptureListProps> = ({ products }) => {
       </div>
 
       <div className="p-4">
-        <div className="relative mb-3">
-          <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="ค้นหาชื่อสินค้า..."
-            value={searchTerm}
-            onChange={event => {
-              setSearchTerm(event.target.value);
-              setIsNamePickerOpen(false);
-            }}
-            className="w-full pl-10 pr-10 py-3 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6A9DF7] placeholder:text-gray-300"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm('');
-                setIsNamePickerOpen(false);
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"
-            >
-              <X size={14} className="text-gray-500" />
-            </button>
-          )}
-        </div>
-
         <div className="relative mb-4">
           <div className="flex items-center justify-between mb-1.5 px-0.5">
             <label className="text-sm font-black text-gray-600">เลือกสินค้า</label>
-            <span className="text-xs font-bold text-gray-400">แตะเพื่อเปิดรายการ</span>
+            <span className="text-xs font-bold text-gray-400">แตะเพื่อเลือกหรือค้นหา</span>
           </div>
-          <button
-            type="button"
-            disabled={selectableNames.length === 0}
-            onClick={() => setIsNamePickerOpen(previous => !previous)}
-            className={`w-full flex items-stretch justify-between gap-3 overflow-hidden bg-white border-2 rounded-2xl shadow-sm text-left transition-all disabled:bg-gray-50 disabled:text-gray-300 ${
+          <div
+            className={`relative flex items-center overflow-hidden bg-white border-2 rounded-2xl shadow-sm transition-all ${
               isNamePickerOpen ? 'border-[#142D95] ring-2 ring-[#6A9DF7]/20' : 'border-gray-200'
             }`}
           >
-            <span className={`flex-1 px-4 py-3.5 text-base font-black truncate ${visibleActiveName ? 'text-gray-900' : 'text-gray-300'}`}>
-              {visibleActiveName || 'เลือกสินค้า'}
-            </span>
-            <span className={`w-12 flex items-center justify-center border-l transition-colors ${
-              isNamePickerOpen ? 'bg-[#F0F4FF] border-[#6A9DF7]/40' : 'bg-gray-50 border-gray-200'
-            }`}>
+            <Search size={17} className="absolute left-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              disabled={names.length === 0}
+              placeholder="เลือกสินค้าที่ต้องการ"
+              value={isNamePickerOpen ? searchTerm : visibleActiveName}
+              onFocus={() => {
+                setSearchTerm('');
+                setIsNamePickerOpen(true);
+              }}
+              onChange={event => {
+                setSearchTerm(event.target.value);
+                setIsNamePickerOpen(true);
+              }}
+              className={`w-full pl-10 pr-20 py-3.5 text-base bg-transparent outline-none placeholder:text-gray-300 ${
+                searchTerm || visibleActiveName ? 'font-black text-gray-900' : 'font-semibold text-gray-400'
+              }`}
+            />
+            {(searchTerm || selectedName) && (
+              <button
+                type="button"
+                aria-label="ล้างสินค้า"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedName('');
+                  localStorage.removeItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY);
+                  setIsNamePickerOpen(false);
+                }}
+                className="absolute right-12 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"
+              >
+                <X size={14} className="text-gray-500" />
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label="เปิดรายการสินค้า"
+              disabled={names.length === 0}
+              onClick={() => {
+                setSearchTerm('');
+                setIsNamePickerOpen(previous => !previous);
+              }}
+              className={`w-11 self-stretch flex items-center justify-center border-l transition-colors disabled:bg-gray-50 ${
+                isNamePickerOpen ? 'bg-[#F0F4FF] border-[#6A9DF7]/40' : 'bg-gray-50 border-gray-200'
+              }`}
+            >
               <ChevronDown
                 size={22}
                 className={`text-[#142D95] shrink-0 transition-transform ${isNamePickerOpen ? 'rotate-180' : ''}`}
               />
-            </span>
-          </button>
+            </button>
+          </div>
 
-          {isNamePickerOpen && selectableNames.length > 0 && (
+          {isNamePickerOpen && (
             <div className="absolute z-30 left-0 right-0 mt-2 max-h-80 overflow-y-auto rounded-2xl border-2 border-[#142D95]/20 bg-white shadow-2xl">
-              {groupedNames.map(group => (
-                <div key={group.id} className="border-b border-gray-100 last:border-0">
-                  <p className="sticky top-0 bg-[#F0F4FF] px-4 py-2 text-xs font-black text-[#142D95]">
-                    {group.title}
-                  </p>
-                  {group.names.map(name => {
-                    const isSelected = name === visibleActiveName;
-                    return (
-                      <button
-                        key={name}
-                        type="button"
-                        ref={isSelected ? selectedOptionRef : undefined}
-                        onClick={() => {
-                          setSelectedName(name);
-                          localStorage.setItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY, name);
-                          setIsNamePickerOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left ${
-                          isSelected ? 'bg-[#FFF4A8]' : 'bg-white'
-                        }`}
-                      >
-                        <span className={`text-sm font-bold ${isSelected ? 'text-gray-950' : 'text-gray-800'}`}>
-                          {name}
-                        </span>
-                        {isSelected && <Check size={17} className="text-[#142D95] shrink-0" />}
-                      </button>
-                    );
-                  })}
+              {selectableNames.length > 0 ? (
+                groupedNames.map(group => (
+                  <div key={group.id} className="border-b border-gray-100 last:border-0">
+                    <p className="sticky top-0 bg-[#F0F4FF] px-4 py-2 text-xs font-black text-[#142D95]">
+                      {group.title}
+                    </p>
+                    {group.names.map(name => {
+                      const isSelected = name === visibleActiveName;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          ref={isSelected ? selectedOptionRef : undefined}
+                          onClick={() => {
+                            setSelectedName(name);
+                            setSearchTerm('');
+                            localStorage.setItem(LAST_SELECTED_PRICE_CHECK_NAME_KEY, name);
+                            setIsNamePickerOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left ${
+                            isSelected ? 'bg-[#FFF4A8]' : 'bg-white'
+                          }`}
+                        >
+                          <span className={`text-sm font-bold ${isSelected ? 'text-gray-950' : 'text-gray-800'}`}>
+                            {name}
+                          </span>
+                          {isSelected && <Check size={17} className="text-[#142D95] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-8 text-center text-sm font-semibold text-gray-400">
+                  ไม่พบสินค้าที่ค้นหา
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
