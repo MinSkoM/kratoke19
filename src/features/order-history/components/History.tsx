@@ -6,8 +6,8 @@ import { fmt } from '../../../utils/fmt';
 interface HistoryProps { orders: Order[]; isLoading: boolean; }
 
 const STATUS: Record<string, { label: string; cls: string; icon: FC<{ size?: number }> }> = {
-  'รอคอนเฟิร์ม':      { label: 'รอคอนเฟิร์ม',      cls: 'bg-amber-100 text-amber-700',   icon: AlertCircle },
-  'ชำระเงินแล้ว':      { label: 'ชำระเงินแล้ว',      cls: 'bg-blue-100 text-blue-700',     icon: Truck },
+  'รอคอนเฟิร์ม':      { label: 'รอคอนเฟิร์ม',      cls: 'bg-[#F3E7E2] text-[#C2410C]',   icon: AlertCircle },
+  'ชำระเงินแล้ว':      { label: 'ชำระเงินแล้ว',      cls: 'bg-[#EEF2F3] text-[#374151]',     icon: Truck },
   'รับสินค้าเรียบร้อย': { label: 'รับสินค้าเรียบร้อย', cls: 'bg-green-100 text-green-700',   icon: CheckCircle },
 };
 
@@ -24,7 +24,7 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
           {/* Order header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center gap-2">
-              <Package size={18} className="text-blue-500"/>
+              <Package size={18} className="text-[#64748B]"/>
               <span className="font-black text-gray-900 text-base">{order.orderId}</span>
             </div>
             <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${s.cls}`}>
@@ -50,7 +50,7 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
                           {specs && <p className="text-xs text-gray-400 mt-0.5">{specs}</p>}
                         </div>
                         <span className="text-gray-500 whitespace-nowrap shrink-0 w-8 text-center">x{item.quantity}</span>
-                        <span className="font-bold text-orange-500 whitespace-nowrap shrink-0 text-right w-24">{fmt(item.price * item.quantity)}</span>
+                        <span className="font-bold text-[#C2410C] whitespace-nowrap shrink-0 text-right w-24">{fmt(item.price * item.quantity)}</span>
                       </div>
                     );
                   })
@@ -61,7 +61,7 @@ const History: FC<HistoryProps> = ({ orders, isLoading }) => (
             {/* Total */}
             <div className="flex justify-between items-center border-t border-dashed border-gray-200 mt-4 pt-3">
               <span className="text-sm text-gray-500 font-medium">ยอดรวม ({order.shippingMethod})</span>
-              <span className="text-2xl font-black text-orange-500">{fmt(order.total)}</span>
+              <span className="text-2xl font-black text-[#C2410C]">{fmt(order.total)}</span>
             </div>
           </div>
         </div>

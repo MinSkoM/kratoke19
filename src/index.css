@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Prompt', 'Sarabun', system-ui, -apple-system, sans-serif;
+  --font-sans: 'K2D', 'Sarabun', system-ui, -apple-system, sans-serif;
 
-  --color-brand-navy:  #142D95;
-  --color-brand-blue:  #6A9DF7;
-  --color-brand-yellow: #FCEF74;
-  --color-brand-gold:  #E3CE54;
+  --color-brand-charcoal: #1F2937;
+  --color-brand-graphite: #374151;
+  --color-brand-steel: #64748B;
+  --color-brand-zinc: #CBD5E1;
+  --color-brand-offwhite: #F7F8F6;
+  --color-brand-accent: #C2410C;
+  --color-brand-accent-bright: #F59E0B;
+  --color-brand-accent-soft: #F3E7E2;
 }
 
 body {
-  font-family: 'Prompt', 'Sarabun', system-ui, -apple-system, sans-serif;
+  font-family: 'K2D', 'Sarabun', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #F5F7FF;
+  background-color: #F7F8F6;
 }
 
 @layer components {
   .input-field {
     @apply w-full px-4 py-4 text-base bg-white border border-gray-200 rounded-2xl
            focus:outline-none transition-all placeholder:text-gray-300;
-    &:focus { box-shadow: 0 0 0 2px #6A9DF7; border-color: transparent; }
+    &:focus { box-shadow: 0 0 0 2px #64748B; border-color: transparent; }
   }
   .spec-label {
     @apply text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5;
@@ -28,9 +32,9 @@ body {
     @apply text-sm font-black text-gray-900 leading-tight;
   }
   .btn-primary {
-    @apply bg-[#142D95] text-white font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
+    @apply bg-[#1F2937] text-white font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
   }
-  .btn-yellow {
-    @apply bg-[#FCEF74] text-[#142D95] font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
+  .btn-soft {
+    @apply bg-[#C2410C] text-white font-black rounded-2xl active:scale-95 transition-transform shadow-sm;
   }
 }

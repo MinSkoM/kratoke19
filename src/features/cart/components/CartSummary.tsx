@@ -42,7 +42,7 @@ const CartSummary: FC<CartSummaryProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <ShoppingBag size={20} className="text-[#142D95]"/>
+            <ShoppingBag size={20} className="text-[#1F2937]"/>
             <h2 className="text-lg font-black text-gray-900">ตะกร้าสินค้า</h2>
           </div>
           <button onClick={() => setShowCart(false)}
@@ -72,7 +72,7 @@ const CartSummary: FC<CartSummaryProps> = ({
                   <button key={m} onClick={() => { setDeliveryMethod(m); setIsEditingAddress(false); }}
                     className={`py-3 rounded-2xl text-base font-bold border-2 transition-all ${
                       deliveryMethod === m
-                        ? 'bg-[#142D95] text-white border-[#142D95] shadow-sm'
+                        ? 'bg-[#1F2937] text-white border-[#1F2937] shadow-sm'
                         : 'bg-white text-gray-500 border-gray-200'
                     }`}>
                     {m}
@@ -83,22 +83,22 @@ const CartSummary: FC<CartSummaryProps> = ({
 
             {/* Address confirm/edit when จัดส่ง */}
             {deliveryMethod === 'จัดส่ง' && (
-              <div className="bg-[#F0F4FF] border border-[#6A9DF7]/40 rounded-2xl p-4 mb-4">
+              <div className="bg-[#EEF2F3] border border-[#64748B]/40 rounded-2xl p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-black text-[#142D95]">ยืนยันที่อยู่จัดส่ง</p>
+                  <p className="text-sm font-black text-[#1F2937]">ยืนยันที่อยู่จัดส่ง</p>
                   {!isEditingAddress && localAddress && (
                     <button onClick={() => setIsEditingAddress(true)}
-                      className="flex items-center gap-1 text-xs text-[#6A9DF7] font-bold">
+                      className="flex items-center gap-1 text-xs text-[#64748B] font-bold">
                       <Edit3 size={12}/> แก้ไข
                     </button>
                   )}
                 </div>
                 {!localAddress ? (
-                  <p className="text-sm text-red-500 font-semibold">ยังไม่มีที่อยู่ กรุณาอัปเดตในหน้าข้อมูลฉัน</p>
+                  <p className="text-sm text-[#C2410C] font-semibold">ยังไม่มีที่อยู่ กรุณาอัปเดตในหน้าข้อมูลฉัน</p>
                 ) : isEditingAddress ? (
                   <div>
                     <textarea value={localAddress} onChange={e => setLocalAddress(e.target.value)}
-                      className="w-full text-sm text-gray-700 bg-white border-2 border-[#6A9DF7] rounded-xl p-3 resize-none focus:outline-none"
+                      className="w-full text-sm text-gray-700 bg-white border-2 border-[#64748B] rounded-xl p-3 resize-none focus:outline-none"
                       rows={3}/>
                     <div className="flex gap-2 mt-2">
                       <button onClick={() => { setIsEditingAddress(false); setLocalAddress(userAddress ?? ''); }}
@@ -106,14 +106,14 @@ const CartSummary: FC<CartSummaryProps> = ({
                         ยกเลิก
                       </button>
                       <button onClick={() => { setIsEditingAddress(false); onAddressUpdate?.(localAddress); }}
-                        className="flex-[2] flex items-center justify-center gap-1.5 py-2 text-sm font-bold text-white bg-[#142D95] rounded-xl">
+                        className="flex-[2] flex items-center justify-center gap-1.5 py-2 text-sm font-bold text-white bg-[#1F2937] rounded-xl">
                         <Check size={14}/> บันทึก
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-start gap-2">
-                    <MapPin size={15} className="text-[#6A9DF7] mt-0.5 shrink-0"/>
+                    <MapPin size={15} className="text-[#64748B] mt-0.5 shrink-0"/>
                     <p className="text-sm text-gray-700 leading-snug">{localAddress}</p>
                   </div>
                 )}
@@ -123,13 +123,13 @@ const CartSummary: FC<CartSummaryProps> = ({
             {/* Total */}
             <div className="flex justify-between items-center mb-4">
               <span className="text-base font-bold text-gray-600">ยอดสุทธิ</span>
-              <span className="text-3xl font-black text-orange-500">{fmt(cartTotal)}</span>
+              <span className="text-3xl font-black text-[#C2410C]">{fmt(cartTotal)}</span>
             </div>
 
             {/* Checkout button */}
             <button onClick={handleCheckout} disabled={!canCheckout}
               className="w-full py-4 rounded-2xl text-lg font-black shadow-md transition-all active:scale-95
-                bg-green-500 text-white hover:bg-green-600
+                bg-[#C2410C] text-white hover:bg-[#9A3412]
                 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:scale-100">
               {isRegistered ? '✓ ส่งคำสั่งซื้อ' : 'ลงทะเบียนก่อนสั่งซื้อ'}
             </button>
@@ -167,21 +167,21 @@ const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: numb
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 gap-3">
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-900 text-sm leading-tight">{item.name}</p>
-        {specs.length > 0 && <p className="text-xs text-[#6A9DF7] font-medium mt-0.5">{specs.join(' · ')}</p>}
-        <p className="text-xs text-gray-400 mt-0.5">{fmt(item.price)}/ชิ้น</p>
+        {specs.length > 0 && <p className="text-xs text-[#64748B] font-medium mt-0.5">{specs.join(' · ')}</p>}
+        <p className="text-xs text-gray-400 mt-0.5">{fmt(item.price)}/{productUnit(item)}</p>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-sm font-black text-orange-500">{fmt(item.price * item.quantity)}</p>
+        <p className="text-sm font-black text-[#C2410C]">{fmt(item.price * item.quantity)}</p>
         <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
           <button onClick={() => updateQuantity(item.id, -1)}
-            className="px-2.5 py-1.5 text-gray-400 active:text-red-500 transition-colors">
-            {item.quantity === 1 ? <Trash2 size={14} className="text-red-400"/> : <Minus size={14}/>}
+            className="px-2.5 py-1.5 text-gray-400 active:text-[#C2410C] transition-colors">
+            {item.quantity === 1 ? <Trash2 size={14} className="text-[#C2410C]"/> : <Minus size={14}/>}
           </button>
           <input type="number" min="1" value={input} onChange={handleChange} onBlur={handleBlur}
             className="w-8 text-center text-sm font-bold text-gray-800 bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
             style={{ MozAppearance: 'textfield' }}/>
           <button onClick={() => updateQuantity(item.id, 1)}
-            className="px-2.5 py-1.5 text-gray-400 active:text-[#142D95] transition-colors">
+            className="px-2.5 py-1.5 text-gray-400 active:text-[#1F2937] transition-colors">
             <Plus size={14}/>
           </button>
         </div>
@@ -191,3 +191,7 @@ const CartItemRow: FC<{ item: CartItem; updateQuantity: (id: string, delta: numb
 };
 
 export default CartSummary;
+
+function productUnit(item: CartItem): string {
+  return String(item.unit || '').trim() || 'หน่วย';
+}

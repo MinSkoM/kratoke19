@@ -19,6 +19,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
 
   const handleSaveEstimate = async () => {
     if (isSaving) return;
+    if (!window.confirm('ยืนยันบันทึกใบเสนอราคาใช่ไหม?')) return;
 
     try {
       setIsSaving(true);
@@ -57,12 +58,12 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
   return (
     <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-5">
       <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
-        <ShoppingBag size={20} className="text-[#142D95]" />
+        <ShoppingBag size={20} className="text-[#1F2937]" />
         <h3 className="text-lg font-black text-gray-900">รายการคำนวณ</h3>
       </div>
 
       {!hasItems ? (
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-8 text-gray-600">
           <ShoppingBag size={36} className="mx-auto mb-2 opacity-30" />
           <p className="text-base font-semibold">ยังไม่มีสินค้าในรายการ</p>
         </div>
@@ -72,16 +73,16 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
             <div key={item.id} className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-black text-gray-900">{item.product.name}</p>
-                <p className="text-xs text-[#6A9DF7] font-semibold mt-0.5">
+        <p className="text-sm text-[#1F2937] font-semibold mt-0.5">
                   {formatSpecs(item.product)}
                 </p>
-                <p className="text-sm font-black text-orange-500 mt-1">{fmt(item.subtotal)}</p>
+                <p className="text-sm font-black text-[#C2410C] mt-1">{fmt(item.subtotal)}</p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => onRemoveItem(item.id)}
-                  className="w-8 h-8 rounded-full bg-red-50 text-red-400 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-[#F3E7E2] text-[#C2410C] flex items-center justify-center"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -91,7 +92,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
                     aria-label="ลดจำนวนสินค้า"
                     disabled={item.quantity <= 1}
                     onClick={() => onUpdateQuantity(item.id, -1)}
-                    className="px-2.5 py-1.5 text-gray-400 active:text-red-500 disabled:cursor-not-allowed disabled:text-gray-200 disabled:active:text-gray-200"
+                    className="px-2.5 py-1.5 text-gray-400 active:text-[#C2410C] disabled:cursor-not-allowed disabled:text-gray-200 disabled:active:text-gray-200"
                   >
                     <Minus size={14} />
                   </button>
@@ -100,7 +101,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
                     type="button"
                     aria-label="เพิ่มจำนวนสินค้า"
                     onClick={() => onUpdateQuantity(item.id, 1)}
-                    className="px-2.5 py-1.5 text-gray-400 active:text-[#142D95]"
+                    className="px-2.5 py-1.5 text-gray-400 active:text-[#1F2937]"
                   >
                     <Plus size={14} />
                   </button>
@@ -113,7 +114,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
 
       <div className="flex items-end justify-between border-t border-dashed border-gray-200 mt-4 pt-4">
         <span className="text-base font-black text-gray-700">ยอดรวมสินค้า</span>
-        <span className="text-3xl font-black text-orange-500">{fmt(result.total)}</span>
+        <span className="text-3xl font-black text-[#C2410C]">{fmt(result.total)}</span>
       </div>
 
       {hasItems && (
@@ -121,7 +122,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
           <button
             type="button"
             onClick={() => setIsPreviewOpen(previous => !previous)}
-            className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#FFF4A8] text-[#142D95] text-base font-black shadow-sm active:scale-95 transition-transform"
+            className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#F3E7E2] text-[#1F2937] text-base font-black shadow-sm active:scale-95 transition-transform"
           >
             <Eye size={18} /> {isPreviewOpen ? 'ซ่อนตัวอย่างใบเสนอราคา' : 'ดูตัวอย่างใบเสนอราคา'}
           </button>
@@ -135,7 +136,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
                   className="w-full rounded-xl bg-white shadow-sm"
                 />
               ) : (
-                <div className="py-10 text-center text-sm font-semibold text-gray-400">
+                <div className="py-10 text-center text-base font-semibold text-gray-600">
                   กำลังสร้างตัวอย่าง...
                 </div>
               )}
@@ -146,7 +147,7 @@ const PricingResult: FC<PricingResultProps> = ({ result, onRemoveItem, onUpdateQ
             type="button"
             disabled={isSaving}
             onClick={handleSaveEstimate}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#142D95] text-white text-base font-black shadow-sm active:scale-95 transition-transform disabled:cursor-wait disabled:bg-gray-300 disabled:active:scale-100"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#1F2937] text-white text-base font-black shadow-sm active:scale-95 transition-transform disabled:cursor-wait disabled:bg-gray-300 disabled:active:scale-100"
           >
             <Download size={18} /> {isSaving ? 'กำลังบันทึก...' : 'บันทึกใบเสนอราคา'}
           </button>
@@ -172,6 +173,7 @@ async function saveEstimateImage(result: PricingResultData) {
       detail: item.product.detail,
       size: item.product.size,
       thickness: item.product.thickness,
+      unit: productUnit(item.product),
       quantity: item.quantity,
       price: item.unitPrice,
     })),
@@ -190,12 +192,78 @@ async function saveEstimateImage(result: PricingResultData) {
     return;
   }
 
+  if (isLineBrowser()) {
+    await openImageSavePage(blob);
+    return;
+  }
+
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = 'ใบเสนอราคา_เหล็กกระโทก.png';
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function isLineBrowser(): boolean {
+  return /\bLine\//i.test(navigator.userAgent);
+}
+
+async function openImageSavePage(blob: Blob): Promise<void> {
+  const imageDataUrl = await blobToDataUrl(blob);
+  const page = new Blob([`<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ใบเสนอราคา</title>
+    <style>
+      body {
+        margin: 0;
+        background: #F7F8F6;
+        color: #1F2937;
+        font-family: K2D, Sarabun, Arial, sans-serif;
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .note {
+        background: #F3E7E2;
+        border-radius: 18px;
+        padding: 14px 16px;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.55;
+        margin-bottom: 12px;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: white;
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="note">กดค้างที่รูปใบเสนอราคา แล้วเลือกบันทึกรูปภาพ หรือส่งต่อให้ลูกค้า</div>
+      <img src="${imageDataUrl}" alt="ใบเสนอราคา" />
+    </div>
+  </body>
+</html>`], { type: 'text/html' });
+  window.location.href = URL.createObjectURL(page);
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('ไม่สามารถแสดงรูปใบเสนอราคาได้'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 function getPreviewQuoteNo(): string {
@@ -219,7 +287,7 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = '#0F172A';
+  ctx.fillStyle = '#1F2937';
   ctx.textBaseline = 'alphabetic';
 
   const dateText = formatThaiDate(new Date());
@@ -248,8 +316,8 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
   const tableTop = headerHeight;
   const tableLeft = margin;
   const tableRight = width - margin;
-  drawRule(ctx, tableLeft, tableTop - 46, tableRight, '#111111', 1.2);
-  drawRule(ctx, tableLeft, tableTop + 22, tableRight, '#111111', 1.2);
+  drawRule(ctx, tableLeft, tableTop - 46, tableRight, '#1F2937', 1.2);
+  drawRule(ctx, tableLeft, tableTop + 22, tableRight, '#1F2937', 1.2);
 
   const col = {
     no: tableLeft + 28,
@@ -259,7 +327,7 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
     amount: width - 105,
   };
 
-  ctx.fillStyle = '#111111';
+  ctx.fillStyle = '#1F2937';
   ctx.font = font(25, 600);
   ctx.fillText('ลำดับ', col.no, tableTop);
   ctx.fillText('รหัสสินค้า/รายละเอียด', col.desc, tableTop);
@@ -274,17 +342,17 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
     const desc = `${item.product.name} ${formatSpecs(item.product)}`;
     const rowTop = y - 38;
     if (index % 2 === 1) {
-      ctx.fillStyle = '#F8FAFC';
+      ctx.fillStyle = '#F7F8F6';
       ctx.fillRect(tableLeft, rowTop, tableRight - tableLeft, rowHeight);
     }
-    drawRule(ctx, tableLeft, rowTop + rowHeight, tableRight, '#E5E7EB', 0.8);
+    drawRule(ctx, tableLeft, rowTop + rowHeight, tableRight, '#CBD5E1', 0.8);
 
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#1F2937';
     ctx.font = font(25, 400);
     ctx.fillText(String(index + 1), col.no + 18, y);
     drawFittedText(ctx, desc, col.desc, y, col.qty - col.desc - 52, 25, 400);
     ctx.textAlign = 'right';
-    ctx.fillText(`${item.quantity.toFixed(2)} ชิ้น`, col.qty, y);
+    ctx.fillText(`${item.quantity.toFixed(2)} ${productUnit(item.product)}`, col.qty, y);
     ctx.fillText(moneyText(item.unitPrice), col.unit, y);
     ctx.fillText(moneyText(item.subtotal), col.amount, y);
     ctx.textAlign = 'left';
@@ -292,9 +360,9 @@ async function createEstimateImageBlob(result: PricingResultData, quoteNo: strin
   });
 
   const footerLineY = height - 250;
-  drawRule(ctx, tableLeft, footerLineY, tableRight, '#111111', 1.2);
+  drawRule(ctx, tableLeft, footerLineY, tableRight, '#1F2937', 1.2);
 
-  ctx.fillStyle = '#111111';
+  ctx.fillStyle = '#1F2937';
   ctx.font = font(24, 400);
   ctx.fillText(`(${thaiBahtText(result.total)})`, margin + 26, footerLineY + 54);
   ctx.fillText('หมายเหตุ  ราคานี้รวมภาษีมูลค่าเพิ่มแล้ว', margin + 26, footerLineY + 100);
@@ -339,7 +407,7 @@ function drawFittedText(ctx: CanvasRenderingContext2D, text: string, x: number, 
 }
 
 function font(size: number, weight: number): string {
-  return `${weight} ${size}px Tahoma, Arial, "Sarabun", "Prompt", sans-serif`;
+  return `${weight} ${size}px K2D, Sarabun, Arial, sans-serif`;
 }
 
 function drawMetaRow(ctx: CanvasRenderingContext2D, label: string, value: string, x: number, y: number) {
@@ -414,6 +482,10 @@ function formatThaiDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear() + 543).slice(-2);
   return `${day}/${month}/${year}`;
+}
+
+function productUnit(product: PricingResultData['items'][number]['product']): string {
+  return String(product.unit || '').trim() || 'หน่วย';
 }
 
 export default PricingResult;

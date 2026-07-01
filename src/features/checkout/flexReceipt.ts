@@ -18,9 +18,9 @@ export function createReceiptMessage({ orderId, cart, deliveryMethod, cartTotal 
         type: 'box',
         layout: 'vertical',
         contents: [
-          { type: 'text', text: 'RECEIPT', weight: 'bold', color: '#1DB446', size: 'sm' },
+          { type: 'text', text: 'RECEIPT', weight: 'bold', color: '#1F2937', size: 'sm' },
           { type: 'text', text: 'รายการสั่งซื้อ', weight: 'bold', size: 'xl', margin: 'md' },
-          { type: 'text', text: `รหัส: ${orderId}`, size: 'xs', color: '#aaaaaa', wrap: true },
+          { type: 'text', text: `รหัส: ${orderId}`, size: 'xs', color: '#64748B', wrap: true },
           { type: 'separator', margin: 'xxl' },
           {
             type: 'box',
@@ -44,12 +44,12 @@ export function createReceiptMessage({ orderId, cart, deliveryMethod, cartTotal 
                     layout: 'vertical',
                     flex: 4,
                     contents: [
-                      { type: 'text', text: item.name, size: 'sm', color: '#333333', wrap: true, weight: 'bold' },
-                      ...(specs ? [{ type: 'text', text: specs, size: 'xs', color: '#888888', wrap: true }] : []),
+                      { type: 'text', text: item.name, size: 'sm', color: '#1F2937', wrap: true, weight: 'bold' },
+                      ...(specs ? [{ type: 'text', text: specs, size: 'xs', color: '#64748B', wrap: true }] : []),
                     ],
                   },
-                  { type: 'text', text: `x${item.quantity}`, size: 'sm', color: '#555555', align: 'center', flex: 1 },
-                  { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#111111', align: 'end', flex: 2 },
+                  { type: 'text', text: `x${item.quantity}`, size: 'sm', color: '#64748B', align: 'center', flex: 1 },
+                  { type: 'text', text: fmt(item.price * item.quantity), size: 'sm', color: '#1F2937', align: 'end', flex: 2 },
                 ],
               };
             }),
@@ -60,8 +60,8 @@ export function createReceiptMessage({ orderId, cart, deliveryMethod, cartTotal 
             layout: 'horizontal',
             margin: 'md',
             contents: [
-              { type: 'text', text: 'วิธีรับสินค้า', size: 'sm', color: '#555555' },
-              { type: 'text', text: deliveryMethod, size: 'sm', color: '#111111', align: 'end', weight: 'bold' },
+              { type: 'text', text: 'วิธีรับสินค้า', size: 'sm', color: '#64748B' },
+              { type: 'text', text: deliveryMethod, size: 'sm', color: '#1F2937', align: 'end', weight: 'bold' },
             ],
           },
           {
@@ -69,8 +69,8 @@ export function createReceiptMessage({ orderId, cart, deliveryMethod, cartTotal 
             layout: 'horizontal',
             margin: 'sm',
             contents: [
-              { type: 'text', text: 'ยอดรวมทั้งสิ้น', size: 'sm', color: '#555555' },
-              { type: 'text', text: fmt(cartTotal), size: 'lg', color: '#ff0000', align: 'end', weight: 'bold' },
+              { type: 'text', text: 'ยอดรวมทั้งสิ้น', size: 'sm', color: '#64748B' },
+              { type: 'text', text: fmt(cartTotal), size: 'lg', color: '#C2410C', align: 'end', weight: 'bold' },
             ],
           },
         ],

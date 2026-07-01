@@ -35,6 +35,7 @@ export interface SubmitQuotationItem {
   detail?: string;
   size?: string;
   thickness?: string;
+  unit?: string;
   quantity: number;
   price: number;
 }

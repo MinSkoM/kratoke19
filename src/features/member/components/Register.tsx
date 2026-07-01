@@ -40,12 +40,12 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
 
         {/* Header banner */}
-        <div className="bg-[#142D95] px-6 pt-8 pb-8 text-white text-center">
+        <div className="bg-[#1F2937] px-6 pt-8 pb-8 text-white text-center">
           <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
             <User size={38}/>
           </div>
           <h2 className="text-2xl font-black">{isRegistered ? 'ข้อมูลของฉัน' : 'ลงทะเบียนใหม่'}</h2>
-          <p className="text-[#6A9DF7] text-sm mt-1">ข้อมูลสำหรับจัดส่งและติดต่อ</p>
+          <p className="text-[#CBD5E1] text-sm mt-1">ข้อมูลสำหรับจัดส่งและติดต่อ</p>
         </div>
 
         <div className="p-6">
@@ -73,17 +73,17 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
               </Field>
 
               {/* PDPA */}
-              <div className="bg-[#F0F4FF] border border-[#6A9DF7]/30 rounded-2xl p-4">
+              <div className="bg-[#EEF2F3] border border-[#64748B]/30 rounded-2xl p-4">
                 <div className="flex gap-3 items-start">
-                  <ShieldCheck size={20} className="text-[#6A9DF7] mt-0.5 shrink-0"/>
+                  <ShieldCheck size={20} className="text-[#64748B] mt-0.5 shrink-0"/>
                   <div>
-                    <p className="text-sm font-bold text-[#142D95] mb-1">นโยบายคุ้มครองข้อมูลส่วนบุคคล</p>
+                    <p className="text-sm font-bold text-[#1F2937] mb-1">นโยบายคุ้มครองข้อมูลส่วนบุคคล</p>
                     <p className="text-sm text-gray-600 leading-relaxed mb-3">
                       ร้านจะเก็บชื่อ, เบอร์โทร, ที่อยู่ เพื่อการสั่งซื้อและจัดส่งเท่านั้น ไม่นำไปใช้เพื่อวัตถุประสงค์อื่น
                     </p>
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input type="checkbox" checked={pdpaConsent} onChange={e => setPdpaConsent(e.target.checked)}
-                        className="w-5 h-5 rounded accent-[#142D95]"/>
+                        className="w-5 h-5 rounded accent-[#1F2937]"/>
                       <span className="text-sm font-semibold text-gray-800">ฉันยินยอมให้เก็บและใช้ข้อมูลส่วนตัว</span>
                     </label>
                   </div>
@@ -98,7 +98,7 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
                   </button>
                 )}
                 <button type="submit" disabled={!pdpaConsent}
-                  className="flex-[2] flex items-center justify-center gap-2 bg-[#142D95] text-white py-4 rounded-2xl font-bold text-base shadow-md active:scale-95 transition-transform disabled:bg-gray-300 disabled:text-gray-500 disabled:scale-100">
+                  className="flex-[2] flex items-center justify-center gap-2 bg-[#1F2937] text-white py-4 rounded-2xl font-bold text-base shadow-md active:scale-95 transition-transform disabled:bg-gray-300 disabled:text-gray-500 disabled:scale-100">
                   <Save size={18}/> บันทึกข้อมูล
                 </button>
               </div>
@@ -106,17 +106,17 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
           ) : (
             <div className="space-y-1">
 
-              <InfoRow icon={<User size={20} className="text-[#6A9DF7]"/>} iconBg="bg-[#F0F4FF]" label="ชื่อ-นามสกุล" value={name}/>
+              <InfoRow icon={<User size={20} className="text-[#64748B]"/>} iconBg="bg-[#EEF2F3]" label="ชื่อ-นามสกุล" value={name}/>
               <InfoRow icon={<Phone size={20} className="text-green-500"/>} iconBg="bg-green-50" label="เบอร์โทรศัพท์" value={phone}/>
-              <InfoRow icon={<MapPin size={20} className="text-orange-500"/>} iconBg="bg-orange-50" label="ที่อยู่จัดส่ง" value={address}/>
+              <InfoRow icon={<MapPin size={20} className="text-[#C2410C]"/>} iconBg="bg-[#C2410C]/30" label="ที่อยู่จัดส่ง" value={address}/>
 
               <div className="pt-4 space-y-3">
                 <button onClick={() => { setPdpaConsent(false); setIsEditing(true); }}
-                  className="w-full flex items-center justify-center gap-2 border-2 border-[#142D95] text-[#142D95] py-4 rounded-2xl font-bold text-base hover:bg-[#F0F4FF] transition-colors">
+                  className="w-full flex items-center justify-center gap-2 border-2 border-[#1F2937] text-[#1F2937] py-4 rounded-2xl font-bold text-base hover:bg-[#EEF2F3] transition-colors">
                   <Edit3 size={18}/> แก้ไขข้อมูล
                 </button>
                 <button onClick={() => setShowDeleteModal(true)}
-                  className="w-full flex items-center justify-center gap-2 border-2 border-red-200 text-red-400 py-3.5 rounded-2xl font-bold text-sm hover:bg-red-50 transition-colors">
+                  className="w-full flex items-center justify-center gap-2 border-2 border-[#C2410C] text-[#C2410C] py-3.5 rounded-2xl font-bold text-sm hover:bg-[#F3E7E2] transition-colors">
                   <Trash2 size={16}/> ขอลบข้อมูลของฉัน
                 </button>
               </div>
@@ -130,8 +130,8 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
         <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-5 backdrop-blur-sm"
           onClick={() => setShowDeleteModal(false)}>
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-xs text-center" onClick={e => e.stopPropagation()}>
-            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={26} className="text-red-500"/>
+            <div className="w-14 h-14 bg-[#F3E7E2] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={26} className="text-[#C2410C]"/>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">ขอลบข้อมูล</h3>
             <p className="text-base text-gray-500 leading-relaxed mb-5">
@@ -140,7 +140,7 @@ const Register: FC<RegisterProps> = ({ onRegister, initialData, isRegistered }) 
             </p>
             <div className="bg-gray-50 rounded-2xl p-4 mb-5">
               <p className="text-sm text-gray-400 mb-1">แจ้งผ่าน</p>
-              <p className="text-lg font-black text-[#142D95]">LINE OA ของร้าน</p>
+              <p className="text-lg font-black text-[#1F2937]">LINE OA ของร้าน</p>
               <p className="text-sm text-gray-500 mt-1">พิมพ์ว่า "ขอลบข้อมูล"</p>
             </div>
             <button onClick={() => setShowDeleteModal(false)}

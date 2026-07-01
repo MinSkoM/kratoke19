@@ -47,7 +47,8 @@ function getProducts() {
       thickness: row[5] || '',
       color: row[6] || '',
       weight: row[7] || '',
-      price: row[8] || 0,
+      unit: row[8] || 'หน่วย',
+      price: row[9] || 0,
     }));
 
   return { status: 'success', data: products };
@@ -90,7 +91,8 @@ function submitOrder(payload) {
   const readableCart = payload.cart.map(item => {
     const specs = [item.detail, item.size, item.thickness].filter(Boolean);
     const specText = specs.length > 0 ? ` (${specs.join(', ')})` : '';
-    return `- [${item.id}] ${item.name}${specText} x${item.quantity} [${item.price * item.quantity}.-]`;
+    const unit = item.unit || 'หน่วย';
+    return `- [${item.id}] ${item.name}${specText} x${item.quantity} ${unit} [${item.price * item.quantity}.-]`;
   }).join('\n');
 
   sheetOrders.appendRow([
@@ -120,7 +122,8 @@ function submitQuotation(payload) {
     const specs = [item.detail, item.size, item.thickness].filter(Boolean);
     const specText = specs.length > 0 ? ` (${specs.join(', ')})` : '';
     const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
-    return `- [${item.id}] ${item.name}${specText} x${item.quantity} [${lineTotal}.-]`;
+    const unit = item.unit || 'หน่วย';
+    return `- [${item.id}] ${item.name}${specText} x${item.quantity} ${unit} [${lineTotal}.-]`;
   }).join('\n');
 
   sheetQuotation.appendRow([

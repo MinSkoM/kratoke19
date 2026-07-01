@@ -73,7 +73,7 @@ const PricingForm: FC<PricingFormProps> = ({
             setSelectedGroup(null);
             setExpandedName(null);
           }}
-          className="w-full pl-10 pr-10 py-3 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6A9DF7] placeholder:text-gray-300"
+          className="w-full pl-10 pr-10 py-3 text-base bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder:text-gray-300"
         />
         {searchTerm && (
           <button
@@ -116,7 +116,7 @@ const PricingForm: FC<PricingFormProps> = ({
       ) : !selectedGroup && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Calculator size={22} className="text-[#142D95]" />
+            <Calculator size={22} className="text-[#1F2937]" />
             <h2 className="text-2xl font-black text-gray-900">เลือกสินค้าเพื่อคำนวณ</h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -171,7 +171,7 @@ const PricingForm: FC<PricingFormProps> = ({
                 setSelectedGroup(null);
                 setExpandedName(null);
               }}
-              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[#142D95] font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0"
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[#1F2937] font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0"
             >
               <ArrowLeft size={15} /> ย้อนกลับ
             </button>

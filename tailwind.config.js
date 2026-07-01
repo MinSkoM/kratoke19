@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', 'sans-serif'],
+        sans: ['"K2D"', '"Sarabun"', 'sans-serif'],
       }
     },
   },

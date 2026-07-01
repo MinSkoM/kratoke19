@@ -37,7 +37,7 @@ const AppRoutes: FC<AppRoutesProps> = ({
   memberInfo,
 }) => (
   <Routes>
-    <Route path="/" element={<Navigate to="/menu" replace />} />
+    <Route path="/" element={<Navigate to="/calculator" replace />} />
     <Route path="/menu" element={
       searchTerm ? (
         <div className="space-y-4 animate-in fade-in duration-200">

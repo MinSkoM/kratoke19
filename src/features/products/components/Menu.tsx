@@ -101,7 +101,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
         <div>
           <div className="flex items-center gap-2 mb-4">
             <button onClick={() => { setSelectedGroup(null); setExpandedName(null); }}
-              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[#142D95] font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0">
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[#1F2937] font-bold text-sm px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform shrink-0">
               <ArrowLeft size={15}/> ย้อนกลับ
             </button>
             <span className="text-sm font-semibold text-gray-600">กลุ่ม {selectedGroup}</span>
@@ -134,7 +134,7 @@ const Menu: FC<MenuProps> = ({ products, isLoading, addToCart }) => {
 const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => void }> = ({ qty, setQty }) => (
   <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full overflow-hidden">
     <button onClick={() => setQty(Math.max(1, Number(qty) - 1))}
-      className="px-3 py-2 text-gray-400 active:text-[#142D95] transition-colors">
+      className="px-3 py-2 text-gray-400 active:text-[#1F2937] transition-colors">
       <Minus size={14}/>
     </button>
     <input type="number" min="1" value={qty}
@@ -143,7 +143,7 @@ const QtyControl: FC<{ qty: number | string; setQty: (v: number | string) => voi
       className="w-8 text-center font-bold text-gray-800 text-base bg-transparent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
       style={{ MozAppearance: 'textfield' }}/>
     <button onClick={() => setQty(Number(qty) + 1)}
-      className="px-3 py-2 text-gray-400 active:text-[#142D95] transition-colors">
+      className="px-3 py-2 text-gray-400 active:text-[#1F2937] transition-colors">
       <Plus size={14}/>
     </button>
   </div>
@@ -204,7 +204,7 @@ export const ProductCard: FC<{
             onError={handleProductImageError}/>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-base leading-snug">{first.name}</p>
-            <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
+            <p className="text-sm text-[#64748B] font-semibold mt-1">
               {isExpanded ? 'เลือกจำนวนด้านล่าง' : 'แตะเพื่อเลือกสินค้า'}
             </p>
           </div>
@@ -220,11 +220,11 @@ export const ProductCard: FC<{
               {first.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{first.thickness}</strong></span>}
             </div>
             <div className="flex items-center justify-between">
-              <PriceStack unitPrice={first.price} quantity={qtyNumber} />
+              <PriceStack unitPrice={first.price} quantity={qtyNumber} unit={productUnit(first)} />
               <div className="flex items-center gap-2">
                 <QtyControl qty={qty} setQty={setQty}/>
                 <button onClick={() => { onAdd(first, Number(qty) || 1); setQty(1); handleToggle(); }}
-                  className="bg-[#E3CE54] text-[#142D95] px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                  className="bg-[#C2410C] text-white px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
                   เพิ่ม
                 </button>
               </div>
@@ -245,7 +245,7 @@ export const ProductCard: FC<{
           onError={handleProductImageError}/>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-snug">{name}</p>
-          <p className="text-sm text-[#6A9DF7] font-semibold mt-1">
+          <p className="text-sm text-[#64748B] font-semibold mt-1">
             {isExpanded ? 'เลือกแบบและจำนวนด้านล่าง' : `${variants.length} ตัวเลือก • กดเพื่อเลือก`}
           </p>
         </div>
@@ -272,7 +272,7 @@ export const ProductCard: FC<{
                     <button key={val} onClick={() => handlePick(key, val)}
                       className={`px-3.5 py-1.5 rounded-full text-sm font-bold border-2 transition-all active:scale-95 ${
                         selectedAttrs[key] === val
-                          ? 'bg-[#142D95] text-white border-[#142D95] shadow-sm'
+                          ? 'bg-[#1F2937] text-white border-[#1F2937] shadow-sm'
                           : 'bg-white text-gray-600 border-gray-200'
                       }`}>
                       {val}
@@ -290,11 +290,11 @@ export const ProductCard: FC<{
                 {exactVariant.thickness && <span className="text-sm text-gray-500">หนา <strong className="text-gray-800">{exactVariant.thickness}</strong></span>}
               </div>
               <div className="flex items-center justify-between">
-                {exactVariant.price ? <PriceStack unitPrice={exactVariant.price} quantity={qtyNumber} /> : <span/>}
+                {exactVariant.price ? <PriceStack unitPrice={exactVariant.price} quantity={qtyNumber} unit={productUnit(exactVariant)} /> : <span/>}
                 <div className="flex items-center gap-2">
                   <QtyControl qty={qty} setQty={setQty}/>
                   <button onClick={() => { onAdd(exactVariant, Number(qty) || 1); setQty(1); handleToggle(); }}
-                    className="bg-[#E3CE54] text-[#142D95] px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                    className="bg-[#C2410C] text-white px-5 py-2 rounded-full font-bold text-sm shadow-sm active:scale-95 transition-transform">
                     เพิ่ม
                   </button>
                 </div>
@@ -307,11 +307,15 @@ export const ProductCard: FC<{
   );
 };
 
-const PriceStack: FC<{ unitPrice: number; quantity: number }> = ({ unitPrice, quantity }) => (
+const PriceStack: FC<{ unitPrice: number; quantity: number; unit: string }> = ({ unitPrice, quantity, unit }) => (
   <div>
-    <p className="text-2xl font-black text-[#142D95]">{fmt(unitPrice * quantity)}</p>
-    <p className="mt-0.5 text-xs font-semibold text-gray-400">ราคาต่อชิ้น {fmt(unitPrice)}</p>
+    <p className="text-2xl font-black text-[#1F2937]">{fmt(unitPrice * quantity)}</p>
+    <p className="mt-0.5 text-xs font-semibold text-gray-400">ราคาต่อ{unit} {fmt(unitPrice)}</p>
   </div>
 );
+
+function productUnit(product: Product): string {
+  return String(product.unit || '').trim() || 'หน่วย';
+}
 
 export default Menu;

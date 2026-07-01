@@ -8,6 +8,7 @@ export interface Product {
   weight: string;
   size: string;
   price: number;
+  unit?: string;
 }
 
 export interface CartItem extends Product {
